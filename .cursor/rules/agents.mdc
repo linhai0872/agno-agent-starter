@@ -1,0 +1,82 @@
+---
+description: Agent 开发规范
+globs: ["app/agents/**/*.py"]
+---
+
+# Agent 开发规范
+
+## 目录结构
+
+```
+app/agents/{agent_name}/
+├── __init__.py    # 导出
+├── agent.py       # Agent 定义 + ModelConfig
+├── prompts.py     # System Prompt
+├── schemas.py     # Pydantic Schema（Structured Output）
+└── tools.py       # 工具函数（可选）
+```
+
+## 创建流程
+
+1. 创建目录: `mkdir -p app/agents/my_agent`
+2. 实现 agent.py（参考模板）
+3. 在 `app/agents/__init__.py` 注册
+
+## Agent 模板
+
+```python
+from agno.agent import Agent
+from agno.db.postgres import PostgresDb
+from app.models import ModelConfig, create_model
+
+AGENT_MODEL_CONFIG = ModelConfig(
+    model_id="google/gemini-2.5-flash-preview-09-2025",
+    temperature=0.2,
+    max_tokens=8192,
+)
+
+def create_my_agent(db: PostgresDb) -> Agent:
+    return Agent(
+        id="my-agent",              # kebab-case
+        name="My Agent",
+        model=create_model(AGENT_MODEL_CONFIG),
+        db=db,
+        instructions=SYSTEM_PROMPT,
+        tools=[...],
+        markdown=True,
+    )
+```
+
+## Structured Output
+
+```python
+from pydantic import BaseModel, Field
+
+class MyOutput(BaseModel):
+    result: str = Field(..., description="结果")
+    confidence: float = Field(..., ge=0, le=1)
+
+agent = Agent(
+    output_schema=MyOutput,
+    use_json_mode=True,
+)
+```
+
+## 注册
+
+```python
+# app/agents/__init__.py
+from app.agents.my_agent.agent import create_my_agent
+agents.append(create_my_agent(db))
+```
+
+## 关键参数
+
+| 参数 | 说明 |
+|------|------|
+| id | Agent ID，kebab-case，决定 API URL |
+| model | 模型实例，使用 create_model() |
+| db | PostgresDb 连接 |
+| instructions | System Prompt |
+| tools | 工具函数列表 |
+| output_schema | Pydantic Model（可选） |

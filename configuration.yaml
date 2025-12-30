@@ -1,0 +1,42 @@
+# AgentOS Configuration
+# 详细文档: https://docs.agno.com/agent-os/config
+
+
+chat:
+  quick_prompts:
+    # 为 Agent 配置快捷提示
+    # your-agent-id:
+    #   - "示例问题 1"
+    #   - "示例问题 2"
+
+
+memory:
+  display_name: "用户记忆"
+  dbs:
+    - db_id: default
+      domain_config:
+        display_name: "Agent 记忆存储"
+
+
+session:
+  display_name: "会话管理"
+  dbs:
+    - db_id: default
+      domain_config:
+        display_name: "Agent 会话"
+
+
+knowledge:
+  display_name: "知识库"
+  dbs:
+    - db_id: default
+      domain_config:
+        display_name: "Agent 知识"
+
+
+metrics:
+  display_name: "运行指标"
+  dbs:
+    - db_id: default
+      domain_config:
+        display_name: "Agent 指标"

@@ -1,0 +1,25 @@
+# 生产环境配置
+# 使用: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: "3.8"
+
+services:
+
+  agno-agent:
+    restart: always
+    environment:
+      DEBUG_MODE: "false"
+      WORKERS: 4
+    volumes:
+      - ./.env:/app/.env:ro
+      - ./configuration.yaml:/app/configuration.yaml:ro
+      # 生产环境不挂载 app 目录，使用镜像内代码
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+

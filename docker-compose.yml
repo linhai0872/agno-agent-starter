@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+
+  agno-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agno-postgres
+    restart: always
+    ports:
+      - "5532:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai}
+      POSTGRES_DB: ${POSTGRES_DB:-ai}
+    volumes:
+      - agno_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agno_network
+
+
+  agno-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agno-agent-starter
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-7777}:7777"
+    env_file:
+      - .env
+    environment:
+      API_PORT: 7777
+      API_HOST: 0.0.0.0
+      DEBUG_MODE: ${DEBUG_MODE:-true}
+      WORKERS: ${WORKERS:-1}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ai}:${POSTGRES_PASSWORD:-ai}@agno-postgres:5432/${POSTGRES_DB:-ai}
+    volumes:
+      - ./.env:/app/.env:ro
+      - ./app:/app/app         # 开发模式：可写，支持热重载
+      - ./configuration.yaml:/app/configuration.yaml:ro
+    depends_on:
+      agno-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7777/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - agno_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+volumes:
+  agno_postgres_data:
+    driver: local
+
+
+networks:
+  agno_network:
+    driver: bridge

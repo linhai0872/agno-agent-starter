@@ -1,0 +1,71 @@
+---
+description: Agno Agent Service 全局开发规范
+globs: ["**/*.py"]
+---
+
+# Agno Agent Service 开发规范
+
+## 核心哲学
+
+1. **AgentOS First** - 使用 AgentOS 标准 API，不自己写 FastAPI 路由
+2. **Single Agent 优先** - 90% 场景用单 Agent + 工具解决，避免过度使用 Team/Workflow
+3. **配置与代码分离** - 模型参数用 ModelConfig 配置，不硬编码
+
+## 关键规则
+
+### 性能
+- 禁止在循环中创建 Agent，Agent 实例是重量级对象
+- 创建一次，复用多次
+
+### 模型配置
+- 使用 `app/models/ModelConfig` 统一接口
+- OpenRouter 是主要模型提供商
+- 思考模式用 ReasoningConfig，网络搜索用 WebSearchConfig
+- 切换模型只需修改 MODEL_CONFIG
+
+### API Key 优先级
+1. Agent 级: `ModelConfig(api_key_env="XXX_KEY")`
+2. Project 级: `ProjectConfig(api_key_env="XXX_KEY")`
+3. Global 级: `OPENROUTER_API_KEY` 环境变量
+
+### 命名规范
+- Agent ID 使用 kebab-case: `my-agent`
+- Agent ID 决定 API URL: `/agents/{agent_id}/runs`
+
+### 数据库
+- 生产环境必须用 PostgresDb
+- 开发可用 SqliteDb
+
+### 代码风格
+- 禁止在 print/log 中使用 emoji
+- 工具函数返回 str，让模型处理
+- 新 Agent 必须在 `app/agents/__init__.py` 注册
+
+## 常见错误
+
+- 自己写 FastAPI 路由（应让 AgentOS 自动生成）
+- 在环境变量里配置模型参数（应在代码中用 ModelConfig）
+- 使用 Team 解决单 Agent 能处理的任务
+- 忘记在 `__init__.py` 注册新 Agent
+
+## 快速参考
+
+```python
+# Agent 模板
+from app.models import ModelConfig, create_model
+
+AGENT_MODEL_CONFIG = ModelConfig(
+    model_id="google/gemini-2.5-flash-preview-09-2025",
+    temperature=0.1,
+    max_tokens=16384,
+)
+
+def create_my_agent(db: PostgresDb) -> Agent:
+    return Agent(
+        id="my-agent",
+        model=create_model(AGENT_MODEL_CONFIG),
+        db=db,
+        instructions=SYSTEM_PROMPT,
+        tools=[...],
+    )
+```
