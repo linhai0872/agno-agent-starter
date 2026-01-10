@@ -3,7 +3,7 @@
 
 
 chat:
-  quick_prompts:
+  quick_prompts: {}
     # 为 Agent 配置快捷提示
     # your-agent-id:
     #   - "示例问题 1"

@@ -33,4 +33,3 @@ def get_all_workflows(db: PostgresDb) -> List[Workflow]:
 
 
 __all__ = ["get_all_workflows"]
-

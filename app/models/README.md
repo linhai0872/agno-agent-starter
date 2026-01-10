@@ -105,3 +105,22 @@ model = create_model(config, project)
 | OLLAMA | 本地部署 |
 | LITELLM | 统一网关 |
 
+## 迭代防护模型
+
+防止 Agent 工具调用时 LLM 无限循环：
+
+```python
+from app.models import GuardedOpenRouter
+
+# 创建带迭代防护的模型
+model = GuardedOpenRouter(
+    id="google/gemini-2.5-flash-preview-05-20",
+    max_iterations=50,  # LLM 最多调用 50 次，超过后抛出 StopAgentRun
+)
+
+agent = Agent(model=model, tools=[...])
+```
+
+适用场景：有工具调用的 Agent 节点（如 EntityVerificationAgent、ContactDiscoveryAgent）。
+
+

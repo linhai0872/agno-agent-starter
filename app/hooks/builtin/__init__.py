@@ -8,12 +8,31 @@
 from app.hooks.builtin.content_safety import content_safety_check
 from app.hooks.builtin.pii_filter import pii_filter_check
 from app.hooks.builtin.output_validator import quality_check, length_check
+from app.hooks.builtin.tool_call_guard import (
+    ToolCallGuard,
+    ToolCallGuardConfig,
+    create_tool_call_guard,
+    get_default_guard,
+    get_strict_guard,
+    get_relaxed_guard,
+)
 
 __all__ = [
+    # 内容安全
     "content_safety_check",
+    # PII 过滤
     "pii_filter_check",
+    # 输出验证
     "quality_check",
     "length_check",
+    # 工具调用防护
+    "ToolCallGuard",
+    "ToolCallGuardConfig",
+    "create_tool_call_guard",
+    "get_default_guard",
+    "get_strict_guard",
+    "get_relaxed_guard",
 ]
+
 
 

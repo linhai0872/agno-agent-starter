@@ -14,6 +14,7 @@ from pathlib import Path
 
 from agno.db.postgres import PostgresDb
 from agno.os import AgentOS
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.agents import get_all_agents
@@ -103,6 +104,15 @@ agent_os = create_app()
 
 # 获取 FastAPI 应用
 app = agent_os.get_app()
+
+# 添加 CORS 中间件，允许跨域请求
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境可限制为特定域名
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 if __name__ == "__main__":

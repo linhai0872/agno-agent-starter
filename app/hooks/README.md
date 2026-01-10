@@ -1,6 +1,6 @@
 # Hooks 开发指南
 
-三层护栏系统，支持内容安全、PII 过滤、输出验证。
+三层护栏系统，支持内容安全、PII 过滤、输出验证、工具调用防护。
 
 ## 目录结构
 
@@ -10,12 +10,44 @@ hooks/
 ├── config.py         # 配置定义
 ├── registry.py       # 三层注册表
 └── builtin/          # 内置护栏
-    ├── content_safety.py
-    ├── pii_filter.py
-    └── output_validator.py
+    ├── content_safety.py    # 内容安全
+    ├── pii_filter.py        # PII 过滤
+    ├── output_validator.py  # 输出验证
+    └── tool_call_guard.py   # 工具调用防护 (防止无限循环)
 ```
 
 ## 内置护栏
+
+### 工具调用防护 (推荐)
+
+防止 Agent 工具调用无限循环，基于 Agno 官方 `RetryAgentRun` + `StopAgentRun` 机制。
+
+```python
+from app.hooks.builtin.tool_call_guard import create_tool_call_guard
+
+# 创建防护器
+guard = create_tool_call_guard(
+    max_calls_per_tool=5,      # 单工具最多调用 5 次 (超过触发 RetryAgentRun)
+    max_retries_per_tool=3,    # 单工具最多提醒 3 次 (超过升级为 StopAgentRun)
+    max_total_calls=30,        # 总调用上限 (超过触发 StopAgentRun)
+)
+
+# 应用到 Agent
+agent = Agent(
+    tools=[...],
+    tool_hooks=[guard],  # 添加为 tool_hook
+)
+```
+
+预配置实例：
+
+```python
+from app.hooks.builtin.tool_call_guard import default_guard, strict_guard, relaxed_guard
+
+# default_guard: 标准配置 (max_calls=5, max_retries=3, max_total=30)
+# strict_guard:  严格配置 (max_calls=3, max_retries=2, max_total=15)
+# relaxed_guard: 宽松配置 (max_calls=10, max_retries=5, max_total=50)
+```
 
 ### 内容安全
 
@@ -94,4 +126,5 @@ override = HookOverride(
     mode="disable",  # disable/replace/wrap
 )
 ```
+
 

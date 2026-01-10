@@ -10,6 +10,9 @@ Tools 抽象层
 - inherit: 继承原工具，仅修改指定属性
 - wrap: 包装原工具，在调用前后添加自定义逻辑
 - replace: 完全替换原工具实现
+
+内置工具:
+- Tavily: 网络搜索和内容抽取
 """
 
 from app.tools.config import (
@@ -23,6 +26,14 @@ from app.tools.config import (
     UNSET,
 )
 from app.tools.registry import ToolRegistry, get_tool_registry
+from app.tools.builtin import (
+    # Tavily
+    create_tavily_tools,
+    create_tavily_search_tool,
+    create_tavily_extract_tool,
+    get_tavily_tools,
+    TavilyToolNames,
+)
 
 __all__ = [
     # 配置类
@@ -37,6 +48,10 @@ __all__ = [
     # 注册表
     "ToolRegistry",
     "get_tool_registry",
+    # Tavily 工具
+    "create_tavily_tools",
+    "create_tavily_search_tool",
+    "create_tavily_extract_tool",
+    "get_tavily_tools",
+    "TavilyToolNames",
 ]
-
-

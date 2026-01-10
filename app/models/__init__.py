@@ -42,6 +42,11 @@ from app.models.factory import (
     create_ollama_local,
 )
 from app.models.registry import MODEL_REGISTRY, ModelCapabilities
+from app.models.providers.guarded import (
+    GuardedOpenRouter,
+    create_guarded_openrouter,
+    create_guarded_openrouter_model,
+)
 
 __all__ = [
     # 配置类
@@ -74,4 +79,8 @@ __all__ = [
     # 注册表
     "MODEL_REGISTRY",
     "ModelCapabilities",
+    # 迭代防护模型
+    "GuardedOpenRouter",
+    "create_guarded_openrouter",
+    "create_guarded_openrouter_model",
 ]

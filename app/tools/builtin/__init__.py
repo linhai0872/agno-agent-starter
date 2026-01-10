@@ -7,11 +7,23 @@
 
 from app.tools.builtin.web_search import web_search
 from app.tools.builtin.http_client import http_get, http_post
+from app.tools.builtin.tavily import (
+    create_tavily_tools,
+    create_tavily_search_tool,
+    create_tavily_extract_tool,
+    get_tavily_tools,
+    TavilyToolNames,
+)
 
 __all__ = [
+    # 基础工具
     "web_search",
     "http_get",
     "http_post",
+    # Tavily 工具
+    "create_tavily_tools",
+    "create_tavily_search_tool",
+    "create_tavily_extract_tool",
+    "get_tavily_tools",
+    "TavilyToolNames",
 ]
-
-

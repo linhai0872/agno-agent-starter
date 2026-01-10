@@ -1,5 +1,5 @@
-# Agno 框架（含 PostgreSQL 和 AgentOS 支持）
-agno[postgres]>=1.0.0
+# Agno 框架（含 PostgreSQL、MCP 和 AgentOS 支持）
+agno[postgres,mcp]>=1.0.0
 
 # ===========================================
 # 模型厂商 SDK
@@ -38,6 +38,9 @@ httpx>=0.27.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 
+# YAML 配置加载
+pyyaml>=6.0
+
 # 环境变量
 python-dotenv>=1.0.0
 
@@ -56,5 +59,17 @@ pgvector>=0.2.0
 # 外部工具
 # ===========================================
 
-# 搜索工具
-tavily-python>=0.3.0
+# 搜索工具 (Tavily - Agno 原生支持)
+tavily-python>=0.5.0
+
+# 搜索工具 (DuckDuckGo - 无需 API Key)
+duckduckgo-search>=7.0.0
+
+# ===========================================
+# Tracing / Observability
+# ===========================================
+
+# OpenTelemetry (Agno Tracing 依赖)
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+openinference-instrumentation-agno>=0.1.0
