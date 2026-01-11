@@ -5,13 +5,11 @@ Workflow 注册入口
 Workflow 用于需要严格步骤控制、条件分支的场景。
 """
 
-from typing import List
-
 from agno.db.postgres import PostgresDb
 from agno.workflow import Workflow
 
 
-def get_all_workflows(db: PostgresDb) -> List[Workflow]:
+def get_all_workflows(db: PostgresDb) -> list[Workflow]:
     """
     获取所有 Workflow 实例
 

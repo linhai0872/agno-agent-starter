@@ -24,7 +24,6 @@ from agno.workflow.types import StepInput
 
 from app.models import ModelConfig, ProjectConfig, create_model
 
-
 # ============== 项目级配置 ==============
 # 整个 Workflow 内的所有 Agent 共用此 API Key
 # 在 .env 中添加: CONTENT_PIPELINE_KEY=sk-xxx
@@ -183,4 +182,3 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
 #
 # from app.workflows.content_pipeline import create_content_pipeline
 # workflows.append(create_content_pipeline(db))
-

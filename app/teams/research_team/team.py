@@ -16,8 +16,6 @@ from agno.db.postgres import PostgresDb
 from agno.team import Team
 
 from app.models import ModelConfig, ProjectConfig, create_model
-from app.teams.research_team.schemas import ResearchReport
-
 
 # ============== 项目级配置 ==============
 # 整个 Team 内的所有 Agent 共用此 API Key
@@ -51,10 +49,10 @@ WRITER_MODEL_CONFIG = ModelConfig(
 def create_research_team(db: PostgresDb) -> Team:
     """
     创建研究团队
-    
+
     Args:
         db: PostgreSQL 数据库连接
-        
+
     Returns:
         配置好的 Team 实例
     """
@@ -72,7 +70,7 @@ def create_research_team(db: PostgresDb) -> Team:
         ],
         add_datetime_to_context=True,
     )
-    
+
     # 创建 Writer Agent
     writer = Agent(
         name="Writer",
@@ -86,7 +84,7 @@ def create_research_team(db: PostgresDb) -> Team:
             "Ensure all claims are based on the provided research.",
         ],
     )
-    
+
     # 创建 Team
     team = Team(
         id="research-team",
@@ -120,7 +118,7 @@ def create_research_team(db: PostgresDb) -> Team:
         # output_schema=ResearchReport,
         # use_json_mode=True,
     )
-    
+
     return team
 
 
@@ -131,4 +129,3 @@ def create_research_team(db: PostgresDb) -> Team:
 # {
 #   "message": "Research the latest trends in AI agents and create a summary report"
 # }
-

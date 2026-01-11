@@ -5,13 +5,11 @@ Team 注册入口
 Team 用于多智能体协作场景，让多个 Agent 共同完成复杂任务。
 """
 
-from typing import List
-
 from agno.db.postgres import PostgresDb
 from agno.team import Team
 
 
-def get_all_teams(db: PostgresDb) -> List[Team]:
+def get_all_teams(db: PostgresDb) -> list[Team]:
     """
     获取所有 Team 实例
 
@@ -33,4 +31,3 @@ def get_all_teams(db: PostgresDb) -> List[Team]:
 
 
 __all__ = ["get_all_teams"]
-

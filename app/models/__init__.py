@@ -13,6 +13,7 @@
 """
 
 from app.models.config import (
+    PROVIDER_DEFAULT_ENV_VARS,
     KnowledgeConfig,
     MemoryConfig,
     ModelConfig,
@@ -22,31 +23,30 @@ from app.models.config import (
     ReasoningConfig,
     StructuredOutputConfig,
     WebSearchConfig,
-    PROVIDER_DEFAULT_ENV_VARS,
 )
 from app.models.factory import (
-    create_model,
-    create_model_from_dict,
-    get_model_info,
+    create_anthropic_claude,
+    create_claude_sonnet,
+    create_dashscope_qwen,
     # OpenRouter 便捷函数
     create_gemini_flash,
     create_gemini_pro,
-    create_claude_sonnet,
+    create_google_gemini,
     create_gpt_4_1,
+    create_model,
+    create_model_from_dict,
+    create_ollama_local,
     # 直连便捷函数
     create_openai_gpt4o,
-    create_google_gemini,
-    create_anthropic_claude,
-    create_dashscope_qwen,
     create_volcengine_doubao,
-    create_ollama_local,
+    get_model_info,
 )
-from app.models.registry import MODEL_REGISTRY, ModelCapabilities
 from app.models.providers.guarded import (
     GuardedOpenRouter,
     create_guarded_openrouter,
     create_guarded_openrouter_model,
 )
+from app.models.registry import MODEL_REGISTRY, ModelCapabilities
 
 __all__ = [
     # 配置类

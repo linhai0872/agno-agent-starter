@@ -27,5 +27,3 @@ __all__ = [
     "HooksRegistry",
     "get_hooks_registry",
 ]
-
-

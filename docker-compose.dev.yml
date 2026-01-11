@@ -1,0 +1,36 @@
+# Docker Compose 开发模式
+# 仅启动 PostgreSQL 数据库，应用通过本地 uvicorn 热重载运行
+#
+# 使用方式:
+#   docker compose -f docker-compose.dev.yml up -d
+#   uvicorn app.main:app --reload --port 7777
+
+services:
+
+  agno-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agno-postgres
+    restart: always
+    ports:
+      - "${POSTGRES_PORT:-5532}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai}
+      POSTGRES_DB: ${POSTGRES_DB:-ai}
+    volumes:
+      - agno_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agno_network
+
+volumes:
+  agno_postgres_data:
+    driver: local
+
+networks:
+  agno_network:
+    driver: bridge

@@ -11,8 +11,6 @@ Structured Output Agent
 会是对应的 Pydantic 对象，可直接访问属性。
 """
 
-from typing import Optional, Type
-
 from agno.agent import Agent
 from agno.db.postgres import PostgresDb
 from pydantic import BaseModel
@@ -28,7 +26,6 @@ from app.agents.structured_output.schemas import (
     ResearchReport,
 )
 from app.models import ModelConfig, ReasoningConfig, create_model
-
 
 # ============== Agent 模型配置 ==============
 
@@ -46,43 +43,43 @@ def create_structured_output_agent(
 ) -> Agent:
     """
     创建结构化输出 Agent
-    
+
     展示官方推荐的 Structured Output 模式：
     - 使用 Pydantic BaseModel 定义 output_schema
     - 使用 use_json_mode=True 确保输出格式
     - response.content 直接返回 Pydantic 对象
-    
+
     Args:
         db: PostgreSQL 数据库连接
         output_type: 输出类型
             - "movie": 电影剧本 (MovieScript)
             - "research": 研究报告 (ResearchReport)
             - "entity": 实体信息 (EntityInfo)
-        
+
     Returns:
         配置好的 Agent 实例
-        
+
     使用示例:
-    
+
     ```python
     # 创建电影剧本 Agent
     agent = create_structured_output_agent(db, output_type="movie")
-    
+
     # 调用 Agent
     response = agent.run("东京")
-    
+
     # response.content 是 MovieScript 对象
-    print(response.content.name)       # 电影标题
-    print(response.content.genre)      # 电影类型
+    print(response.content.name)  # 电影标题
+    print(response.content.genre)  # 电影类型
     print(response.content.storyline)  # 剧情概要
     ```
     """
     # 根据类型选择 Schema 和 Prompt
-    schema: Type[BaseModel]
+    schema: type[BaseModel]
     prompt: str
     agent_id: str
     description: str
-    
+
     if output_type == "research":
         schema = ResearchReport
         prompt = RESEARCH_REPORT_PROMPT
@@ -99,9 +96,9 @@ def create_structured_output_agent(
         prompt = MOVIE_SCRIPT_PROMPT
         agent_id = "structured-movie"
         description = "电影剧本生成 Agent，输出结构化的电影概念"
-    
+
     model = create_model(AGENT_MODEL_CONFIG)
-    
+
     agent = Agent(
         id=agent_id,
         name=f"Structured Output Agent ({output_type})",
@@ -110,18 +107,19 @@ def create_structured_output_agent(
         db=db,
         instructions=prompt,
         # ========== 核心配置：结构化输出 ==========
-        output_schema=schema,     # Pydantic Model
-        use_json_mode=True,       # 官方推荐：启用 JSON 模式
+        output_schema=schema,  # Pydantic Model
+        use_json_mode=True,  # 官方推荐：启用 JSON 模式
         # ==========================================
         markdown=False,  # 结构化输出不需要 Markdown
         add_history_to_context=True,
         num_history_runs=3,
     )
-    
+
     return agent
 
 
 # ============== 便捷工厂函数 ==============
+
 
 def create_movie_script_agent(db: PostgresDb) -> Agent:
     """创建电影剧本 Agent"""
@@ -177,4 +175,3 @@ def create_entity_info_agent(db: PostgresDb) -> Agent:
 # print(f"电影类型: {movie.genre}")
 # print(f"剧情: {movie.storyline}")
 # ```
-

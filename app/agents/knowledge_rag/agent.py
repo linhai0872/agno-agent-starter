@@ -8,15 +8,14 @@ Knowledge RAG Agent
 from agno.agent import Agent
 from agno.db.postgres import PostgresDb
 
-from app.config import get_settings
 from app.agents.knowledge_rag.prompts import SYSTEM_PROMPT
+from app.config import get_settings
 from app.models import (
     KnowledgeConfig,
     ModelConfig,
     ReasoningConfig,
     create_model,
 )
-
 
 # ============== Agent 模型配置 ==============
 
@@ -33,26 +32,21 @@ AGENT_MODEL_CONFIG = ModelConfig(
 AGENT_KNOWLEDGE_CONFIG = KnowledgeConfig(
     # 启用知识库
     enabled=True,
-    
     # 向量数据库配置
     vector_db_table="knowledge_rag_embeddings",
     search_type="hybrid",
-    
     # Embedder 配置
     embedder_model="text-embedding-3-small",
     embedder_provider="openai",
-    
     # Reranker 配置（可选）
     enable_reranker=False,
     reranker_model="rerank-v3.5",
     reranker_provider="cohere",
-    
     # RAG 模式
     # Agentic RAG: Agent 主动搜索
     search_knowledge=True,
     # Traditional RAG: 自动注入上下文
     add_knowledge_to_context=False,
-    
     # 检索配置
     num_results=5,
 )
@@ -61,23 +55,23 @@ AGENT_KNOWLEDGE_CONFIG = KnowledgeConfig(
 def create_knowledge_rag_agent(db: PostgresDb) -> Agent:
     """
     创建 Knowledge RAG Agent
-    
+
     注意：实际使用时需要配置知识库：
     1. 创建 AgentKnowledge 实例
     2. 加载文档到知识库
     3. 将知识库关联到 Agent
-    
+
     Args:
         db: PostgreSQL 数据库连接
-        
+
     Returns:
         配置好的 Agent 实例
     """
     settings = get_settings()
-    
+
     model = create_model(AGENT_MODEL_CONFIG)
     knowledge_params = AGENT_KNOWLEDGE_CONFIG.to_agent_params()
-    
+
     # 注意：以下是知识库配置的示例代码
     # 实际使用时需要取消注释并配置
     #
@@ -101,7 +95,7 @@ def create_knowledge_rag_agent(db: PostgresDb) -> Agent:
     #     vector_db=vector_db,
     #     num_documents=AGENT_KNOWLEDGE_CONFIG.num_results,
     # )
-    
+
     agent = Agent(
         id="knowledge-rag",
         name="Knowledge RAG Agent",
@@ -119,7 +113,7 @@ def create_knowledge_rag_agent(db: PostgresDb) -> Agent:
         num_history_runs=5,
         debug_mode=settings.debug_mode,
     )
-    
+
     return agent
 
 
@@ -146,5 +140,3 @@ def create_knowledge_rag_agent(db: PostgresDb) -> Agent:
 # results = knowledge.search("如何配置数据库连接?")
 # for doc in results:
 #     print(doc.content)
-
-

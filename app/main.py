@@ -16,8 +16,8 @@ from agno.db.postgres import PostgresDb
 from agno.os import AgentOS
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
 from app.agents import get_all_agents
+from app.config import get_settings
 from app.teams import get_all_teams
 from app.workflows import get_all_workflows
 
@@ -28,21 +28,21 @@ def setup_tracing(settings) -> None:
     """配置 OpenTelemetry Tracing"""
     if not settings.enable_tracing:
         return
-    
+
     try:
         from agno.tracing import setup_tracing as agno_setup_tracing
-        
+
         tracing_db_url = settings.tracing_db_url or settings.database_url
         tracing_db = PostgresDb(
             id="agno-tracing-db",
             db_url=tracing_db_url,
         )
-        
+
         agno_setup_tracing(
             db=tracing_db,
             max_export_batch_size=settings.tracing_batch_size,
         )
-        
+
         logger.info("Tracing enabled with batch_size=%d", settings.tracing_batch_size)
     except ImportError:
         logger.warning("agno.tracing not available. Tracing disabled.")
@@ -84,10 +84,10 @@ def create_app():
         "teams": teams,
         "workflows": workflows,
     }
-    
+
     if config_path.exists():
         os_kwargs["config"] = str(config_path)
-    
+
     # MCP Server 配置
     if settings.enable_mcp_server:
         os_kwargs["enable_mcp_server"] = True

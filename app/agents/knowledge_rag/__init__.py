@@ -8,9 +8,9 @@ Knowledge RAG Agent
 """
 
 from app.agents.knowledge_rag.agent import (
-    create_knowledge_rag_agent,
-    AGENT_MODEL_CONFIG,
     AGENT_KNOWLEDGE_CONFIG,
+    AGENT_MODEL_CONFIG,
+    create_knowledge_rag_agent,
 )
 
 __all__ = [
@@ -18,5 +18,3 @@ __all__ = [
     "AGENT_MODEL_CONFIG",
     "AGENT_KNOWLEDGE_CONFIG",
 ]
-
-

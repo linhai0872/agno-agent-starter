@@ -5,15 +5,13 @@
     pytest tests/test_models.py -v
 """
 
-import pytest
-
 from app.models.config import (
+    KnowledgeConfig,
+    MemoryConfig,
     ModelConfig,
     ModelProvider,
     ReasoningConfig,
     WebSearchConfig,
-    MemoryConfig,
-    KnowledgeConfig,
 )
 
 
@@ -23,7 +21,7 @@ class TestModelConfig:
     def test_default_config(self):
         """测试默认配置"""
         config = ModelConfig()
-        
+
         assert config.provider == ModelProvider.OPENROUTER
         assert config.model_id == "google/gemini-2.5-flash-preview-09-2025"
         assert config.temperature is None
@@ -37,7 +35,7 @@ class TestModelConfig:
             temperature=0.7,
             max_tokens=4096,
         )
-        
+
         assert config.provider == ModelProvider.OPENAI
         assert config.model_id == "gpt-4o"
         assert config.temperature == 0.7
@@ -50,11 +48,11 @@ class TestModelConfig:
             effort="high",
             max_tokens=2048,
         )
-        
+
         assert reasoning.enabled is True
         assert reasoning.effort == "high"
         assert reasoning.max_tokens == 2048
-        
+
         # 测试 OpenRouter 参数转换
         params = reasoning.to_openrouter_params()
         assert "reasoning" in params
@@ -66,10 +64,10 @@ class TestModelConfig:
             enabled=True,
             max_results=3,
         )
-        
+
         assert web_search.enabled is True
         assert web_search.max_results == 3
-        
+
         # 测试 OpenRouter 参数转换
         params = web_search.to_openrouter_params()
         assert "plugins" in params
@@ -81,7 +79,7 @@ class TestMemoryConfig:
     def test_default_memory(self):
         """测试默认记忆配置"""
         memory = MemoryConfig()
-        
+
         assert memory.enable_user_memories is False
         assert memory.enable_agentic_memory is False
 
@@ -91,7 +89,7 @@ class TestMemoryConfig:
             enable_user_memories=True,
             enable_session_summaries=True,
         )
-        
+
         params = memory.to_agent_params()
         assert params.get("enable_user_memories") is True
         assert params.get("enable_session_summaries") is True
@@ -99,7 +97,7 @@ class TestMemoryConfig:
     def test_agentic_memory(self):
         """测试自主记忆模式"""
         memory = MemoryConfig(enable_agentic_memory=True)
-        
+
         params = memory.to_agent_params()
         assert params.get("enable_agentic_memory") is True
 
@@ -113,7 +111,7 @@ class TestKnowledgeConfig:
             enabled=True,
             search_knowledge=True,
         )
-        
+
         params = knowledge.to_agent_params()
         assert params.get("search_knowledge") is True
 
@@ -124,8 +122,6 @@ class TestKnowledgeConfig:
             search_knowledge=False,
             add_knowledge_to_context=True,
         )
-        
+
         params = knowledge.to_agent_params()
         assert params.get("add_knowledge_to_context") is True
-
-

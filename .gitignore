@@ -129,3 +129,17 @@ temp/
 celerybeat-schedule
 celerybeat.pid
 *.sage.py
+
+
+# AI Tools & Internal Workflows
+
+.agent/
+.claude/
+.codex/
+.cursor/
+_bmad/
+_bmad-output/
+docs/
+OPENCODE_INSIGHTS.md
+model-layer-optimization.md
+example_application_dsl/

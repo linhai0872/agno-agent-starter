@@ -21,7 +21,6 @@ from agno.team import Team
 
 from app.models import ModelConfig, ProjectConfig, create_model
 
-
 # ============== 项目级配置 ==============
 # 整个 Team 内的所有 Agent 共用此 API Key
 # 在 .env 中添加: RESEARCH_TEAM_KEY=sk-xxx
@@ -104,4 +103,3 @@ def create_research_team(db: PostgresDb, agents: list[Agent]) -> Team:
 #
 # from app.teams.research_team import create_research_team
 # teams.append(create_research_team(db, agents))
-

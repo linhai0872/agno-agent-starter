@@ -6,7 +6,7 @@
 
 import logging
 import re
-from typing import Any, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +38,19 @@ def content_safety_check(
 ) -> None:
     """
     框架级内容安全检查
-    
+
     Args:
         run_output: Agent 的输出（RunOutput 对象或字符串）
         level: 安全级别 - "strict", "moderate", "permissive"
-        
+
     Raises:
         ValueError: 当内容包含不安全模式时
     """
     # 获取内容字符串
-    if hasattr(run_output, "content"):
-        content = str(run_output.content)
-    else:
-        content = str(run_output)
-    
+    content = str(run_output.content) if hasattr(run_output, "content") else str(run_output)
+
     content_lower = content.lower()
-    
+
     # 根据级别选择模式列表
     if level == "strict":
         patterns = STRICT_BLOCKED_PATTERNS
@@ -61,7 +58,7 @@ def content_safety_check(
         patterns = PERMISSIVE_BLOCKED_PATTERNS
     else:
         patterns = MODERATE_BLOCKED_PATTERNS
-    
+
     # 检查阻止模式
     for pattern in patterns:
         match = re.search(pattern, content_lower)
@@ -71,10 +68,6 @@ def content_safety_check(
                 "Content safety check failed: found blocked pattern '%s'",
                 matched_text,
             )
-            raise ValueError(
-                f"Content contains blocked pattern: {matched_text}"
-            )
-    
+            raise ValueError(f"Content contains blocked pattern: {matched_text}")
+
     logger.debug("Content safety check passed")
-
-

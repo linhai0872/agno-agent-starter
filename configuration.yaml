@@ -1,6 +1,24 @@
 # AgentOS Configuration
 # 详细文档: https://docs.agno.com/agent-os/config
+#
+# 本文件同时服务于两个目的:
+# 1. 业务配置 (顶级 key) → 被 app/config.py Settings 读取
+# 2. AgentOS Web UI 配置 (嵌套结构) → 被 AgentOS 框架读取
 
+
+# ============================================
+# 业务配置 (顶级 key)
+# 优先级: .env > configuration.yaml > 默认值
+# ============================================
+
+# 默认模型名称 (可被 .env 中的 MODEL_NAME 覆盖)
+# model_name: gpt-4o
+
+
+# ============================================
+# AgentOS Web UI 配置 (嵌套结构)
+# 这些配置用于 AgentOS 界面显示
+# ============================================
 
 chat:
   quick_prompts: {}

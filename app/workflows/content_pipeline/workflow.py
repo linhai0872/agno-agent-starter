@@ -19,7 +19,6 @@ from agno.workflow.types import StepInput
 
 from app.models import ModelConfig, ProjectConfig, create_model
 
-
 # ============== 项目级配置 ==============
 
 PROJECT_CONFIG = ProjectConfig(
@@ -45,23 +44,23 @@ CREATIVE_MODEL_CONFIG = ModelConfig(
 def create_content_pipeline(db: PostgresDb) -> Workflow:
     """
     创建内容生成工作流
-    
+
     流程:
     1. Research: 研究主题，收集信息
     2. Summarize: 整理研究发现
     3. Fact Check (条件): 如果包含数据/统计，进行事实核查
     4. Write: 撰写最终文章
-    
+
     Args:
         db: PostgreSQL 数据库连接
-        
+
     Returns:
         配置好的 Workflow 实例
     """
     # ============== 定义 Agents ==============
     # 注意：Workflow 内的 Agent 是无状态的，不需要传 db 参数
     # 如需 Session/Memory 持久化，可添加 db=db 参数
-    
+
     researcher = Agent(
         name="Researcher",
         model=create_model(STANDARD_MODEL_CONFIG, PROJECT_CONFIG),
@@ -76,7 +75,7 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             "Format your findings clearly with sections and bullet points.",
         ],
     )
-    
+
     summarizer = Agent(
         name="Summarizer",
         model=create_model(STANDARD_MODEL_CONFIG, PROJECT_CONFIG),
@@ -91,7 +90,7 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             "Flag any claims that need verification.",
         ],
     )
-    
+
     fact_checker = Agent(
         name="FactChecker",
         model=create_model(STANDARD_MODEL_CONFIG, PROJECT_CONFIG),
@@ -106,7 +105,7 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             "Be thorough but efficient.",
         ],
     )
-    
+
     writer = Agent(
         name="Writer",
         model=create_model(CREATIVE_MODEL_CONFIG, PROJECT_CONFIG),
@@ -121,44 +120,44 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             "- Aim for ~1000 words unless specified otherwise",
         ],
     )
-    
+
     # ============== 定义 Steps ==============
-    
+
     research_step = Step(
         name="research",
         description="Research the topic and gather information",
         agent=researcher,
     )
-    
+
     summarize_step = Step(
         name="summarize",
         description="Summarize and organize research findings",
         agent=summarizer,
     )
-    
+
     fact_check_step = Step(
         name="fact_check",
         description="Verify facts, statistics, and claims",
         agent=fact_checker,
     )
-    
+
     write_step = Step(
         name="write_article",
         description="Write the final article",
         agent=writer,
     )
-    
+
     # ============== 条件判断 ==============
-    
+
     def needs_fact_checking(step_input: StepInput) -> bool:
         """
         判断是否需要事实核查
-        
+
         触发条件：内容包含数据、统计或引用
         """
         content = step_input.previous_step_content or ""
         content_lower = content.lower()
-        
+
         # 需要核查的指标词
         fact_indicators = [
             "study shows",
@@ -175,12 +174,12 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             "increased by",
             "decreased by",
         ]
-        
+
         # 任一指标词出现则需要核查
         return any(indicator in content_lower for indicator in fact_indicators)
-    
+
     # ============== 创建 Workflow ==============
-    
+
     workflow = Workflow(
         id="content-pipeline",
         name="Content Pipeline",
@@ -198,7 +197,7 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
             write_step,
         ],
     )
-    
+
     return workflow
 
 
@@ -211,4 +210,3 @@ def create_content_pipeline(db: PostgresDb) -> Workflow:
 # }
 #
 # 响应包含每个步骤的输出和最终文章
-

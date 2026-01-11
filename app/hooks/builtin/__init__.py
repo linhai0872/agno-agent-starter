@@ -6,15 +6,15 @@
 """
 
 from app.hooks.builtin.content_safety import content_safety_check
+from app.hooks.builtin.output_validator import length_check, quality_check
 from app.hooks.builtin.pii_filter import pii_filter_check
-from app.hooks.builtin.output_validator import quality_check, length_check
 from app.hooks.builtin.tool_call_guard import (
     ToolCallGuard,
     ToolCallGuardConfig,
     create_tool_call_guard,
     get_default_guard,
-    get_strict_guard,
     get_relaxed_guard,
+    get_strict_guard,
 )
 
 __all__ = [
@@ -33,6 +33,3 @@ __all__ = [
     "get_strict_guard",
     "get_relaxed_guard",
 ]
-
-
-

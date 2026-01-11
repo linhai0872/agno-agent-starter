@@ -75,12 +75,32 @@ warn_unused_ignores = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
 
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["app"]
+exclude = [
+    "**/__pycache__",
+    ".venv",
+    "build",
+    "dist",
+    # 暂时排除有复杂类型问题的文件 (将在 Epic 7 处理)
+    "app/models/providers/**",
+    "app/models/factory.py",
+    "app/models/config.py",
+    "app/tools/builtin/**",
+    "app/tools/config.py",
+]
+reportMissingImports = "warning"
+reportMissingTypeStubs = false
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
     "mypy>=1.10.0",
+    "pyright>=1.1.380",
     "pre-commit>=3.7.0",
 ]
 

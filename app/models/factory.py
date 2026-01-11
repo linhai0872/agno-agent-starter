@@ -5,7 +5,7 @@
 """
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from app.models.config import (
     ModelConfig,
@@ -21,13 +21,13 @@ from app.models.registry import MODEL_REGISTRY, ModelCapabilities
 logger = logging.getLogger(__name__)
 
 
-def get_model_info(model_id: str) -> Optional[ModelCapabilities]:
+def get_model_info(model_id: str) -> ModelCapabilities | None:
     """
     获取模型信息
-    
+
     Args:
         model_id: 模型 ID
-        
+
     Returns:
         模型能力信息，如果未注册则返回 None
     """
@@ -36,11 +36,11 @@ def get_model_info(model_id: str) -> Optional[ModelCapabilities]:
 
 def create_model(
     config: ModelConfig,
-    project_config: Optional[ProjectConfig] = None,
+    project_config: ProjectConfig | None = None,
 ) -> Any:
     """
     根据配置创建模型实例 (多厂商路由)
-    
+
     支持的厂商:
     - OpenRouter: 统一网关，支持 100+ 模型
     - OpenAI: GPT-4o, o1/o3 系列
@@ -50,66 +50,74 @@ def create_model(
     - Volcengine: 豆包 Seed, DeepSeek
     - Ollama: 本地部署模型
     - LiteLLM: 统一网关
-    
+
     API Key 三层优先级（从高到低）：
     1. Agent 级: config.api_key_env
     2. Project 级: project_config.api_key_env
     3. Global 级: 厂商默认环境变量
-    
+
     Args:
         config: 模型配置
         project_config: 项目级配置（可选）
-        
+
     Returns:
         模型实例 (Agno Model 或自定义适配器)
     """
     match config.provider:
         case ModelProvider.OPENROUTER:
             from app.models.providers.openrouter import create_openrouter_model
+
             return create_openrouter_model(config, project_config)
-        
+
         case ModelProvider.OPENAI:
             from app.models.providers.openai import create_openai_model
+
             return create_openai_model(config, project_config)
-        
+
         case ModelProvider.GOOGLE:
             from app.models.providers.google import create_google_model
+
             return create_google_model(config, project_config)
-        
+
         case ModelProvider.ANTHROPIC:
             from app.models.providers.anthropic import create_anthropic_model
+
             return create_anthropic_model(config, project_config)
-        
+
         case ModelProvider.DASHSCOPE:
             from app.models.providers.dashscope import create_dashscope_model
+
             return create_dashscope_model(config, project_config)
-        
+
         case ModelProvider.VOLCENGINE:
             from app.models.providers.volcengine import create_volcengine_model
+
             return create_volcengine_model(config, project_config)
-        
+
         case ModelProvider.OLLAMA:
             from app.models.providers.ollama import create_ollama_model
+
             return create_ollama_model(config, project_config)
-        
+
         case ModelProvider.LITELLM:
             from app.models.providers.litellm import create_litellm_model
+
             return create_litellm_model(config, project_config)
-        
+
         case _:
             raise ValueError(f"Unsupported model provider: {config.provider}")
 
 
-def create_model_from_dict(config_dict: Dict[str, Any]) -> Any:
+def create_model_from_dict(config_dict: dict[str, Any]) -> Any:
     """
     从字典创建模型（便于从配置文件加载）
-    
+
     Args:
         config_dict: 配置字典
-        
+
     Returns:
         模型实例
-        
+
     示例:
         config = {
             "provider": "openai",
@@ -124,32 +132,35 @@ def create_model_from_dict(config_dict: Dict[str, Any]) -> Any:
     """
     # 复制以避免修改原字典
     config_dict = config_dict.copy()
-    
+
     # 处理 provider 枚举
     if "provider" in config_dict:
         provider_str = config_dict.pop("provider")
         if isinstance(provider_str, str):
             config_dict["provider"] = ModelProvider(provider_str)
-    
+
     # 提取嵌套配置
     reasoning_dict = config_dict.pop("reasoning", {})
     web_search_dict = config_dict.pop("web_search", {})
     multimodal_dict = config_dict.pop("multimodal", {})
     structured_output_dict = config_dict.pop("structured_output", {})
-    
+
     # 创建配置对象
     config = ModelConfig(
         **config_dict,
         reasoning=ReasoningConfig(**reasoning_dict) if reasoning_dict else ReasoningConfig(),
         web_search=WebSearchConfig(**web_search_dict) if web_search_dict else WebSearchConfig(),
         multimodal=MultimodalConfig(**multimodal_dict) if multimodal_dict else MultimodalConfig(),
-        structured_output=StructuredOutputConfig(**structured_output_dict) if structured_output_dict else StructuredOutputConfig(),
+        structured_output=StructuredOutputConfig(**structured_output_dict)
+        if structured_output_dict
+        else StructuredOutputConfig(),
     )
-    
+
     return create_model(config)
 
 
 # ============== 便捷函数 (OpenRouter) ==============
+
 
 def create_gemini_flash(
     temperature: float = 0.1,
@@ -220,6 +231,7 @@ def create_gpt_4_1(
 
 
 # ============== 便捷函数 (直连) ==============
+
 
 def create_openai_gpt4o(
     temperature: float = 0.2,

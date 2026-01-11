@@ -7,4 +7,3 @@ Structured Output Agent
 from app.agents.structured_output.agent import create_structured_output_agent
 
 __all__ = ["create_structured_output_agent"]
-
