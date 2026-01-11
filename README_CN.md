@@ -31,16 +31,26 @@
 
 ## 快速启动
 
-```bash
-# 1. 克隆并配置
-git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
-cp .env.example .env
-# 编辑 .env → 添加 OPENROUTER_API_KEY
+### 方式 A: npx (推荐)
 
-# 2. 启动
+```bash
+# 创建新项目
+npx create-agno-agent my-agent
+cd my-agent
+
+# 配置并启动
+cp .env.example .env  # 添加 OPENROUTER_API_KEY
 docker compose up -d
 
-# 3. 完成！打开 http://localhost:7777/docs
+# 完成！打开 http://localhost:7777/docs
+```
+
+### 方式 B: Git Clone
+
+```bash
+git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
+cp .env.example .env
+docker compose up -d
 ```
 
 ### 试一试

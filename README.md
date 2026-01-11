@@ -31,16 +31,26 @@
 
 ## Quick Start
 
-```bash
-# 1. Clone & Configure
-git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
-cp .env.example .env
-# Edit .env → add OPENROUTER_API_KEY
+### Option A: npx (Recommended)
 
-# 2. Start
+```bash
+# Create a new project
+npx create-agno-agent my-agent
+cd my-agent
+
+# Configure & Start
+cp .env.example .env  # Add OPENROUTER_API_KEY
 docker compose up -d
 
-# 3. Done! Open http://localhost:7777/docs
+# Done! Open http://localhost:7777/docs
+```
+
+### Option B: Git Clone
+
+```bash
+git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
+cp .env.example .env
+docker compose up -d
 ```
 
 ### Try It
