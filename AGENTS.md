@@ -65,3 +65,44 @@ def create_my_agent(db: PostgresDb) -> Agent:
     )
 ```
 
+## 注册表使用
+
+工具和 Hooks 使用三层优先级注册表 (`PriorityRegistry`)：
+
+```
+优先级（覆盖模式）：
+1. Agent 级 - 最高优先级，完全覆盖
+2. Project 级 - 中间优先级
+3. Framework 级 - 最低优先级，提供默认值
+```
+
+### 冲突检测
+
+**同层级**注册同名项目会抛出 `RegistryConflictError`：
+
+```python
+from app.tools import get_tool_registry, RegistryConflictError
+
+registry = get_tool_registry()
+registry.register_framework_tool(tool_a, name="search")
+
+# 同层级冲突 → 抛出异常
+registry.register_framework_tool(tool_b, name="search")
+# RegistryConflictError: 'search' already registered at framework level
+```
+
+**跨层级**同名是允许的（这是优先级覆盖的设计意图）：
+
+```python
+# Framework 级有 "search"
+registry.register_framework_tool(framework_search, name="search")
+
+# Agent 级可以覆盖同名
+tools = registry.get_tools_for_agent(agent_tools=[agent_search])
+# agent_search 覆盖 framework_search
+```
+
+### 常见错误
+
+- 在同一层级重复注册同名工具/Hook
+- 忘记捕获 `RegistryConflictError`

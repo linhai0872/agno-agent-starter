@@ -127,4 +127,27 @@ override = HookOverride(
 )
 ```
 
+## 冲突检测
 
+同层级注册同名 Hook 会抛出 `RegistryConflictError`：
+
+```python
+from app.hooks import HooksRegistry, HooksConfig, HookConfig, RegistryConflictError
+
+registry = HooksRegistry()
+
+# 首次注册成功
+registry.register_framework_hooks(HooksConfig(
+    pre_hooks=[HookConfig(name="my_hook", hook_fn=my_fn, hook_type="pre")]
+))
+
+# 再次注册同名 Hook 会抛出异常
+try:
+    registry.register_framework_hooks(HooksConfig(
+        pre_hooks=[HookConfig(name="my_hook", hook_fn=other_fn, hook_type="pre")]
+    ))
+except RegistryConflictError as e:
+    print(f"冲突: {e}")  # 'my_hook' already registered at framework level
+```
+
+**注意**: 跨层级同名是允许的（Agent 级覆盖 Project 级覆盖 Framework 级）。

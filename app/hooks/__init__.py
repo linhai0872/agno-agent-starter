@@ -11,6 +11,7 @@ Hooks/Guardrails 抽象层
 - Post-Hooks: Agent -> Project -> Framework（内到外）
 """
 
+from app.core.registry import RegistryConflictError
 from app.hooks.config import (
     HookConfig,
     HookOverride,
@@ -26,4 +27,5 @@ __all__ = [
     # 注册表
     "HooksRegistry",
     "get_hooks_registry",
+    "RegistryConflictError",
 ]

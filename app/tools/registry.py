@@ -19,6 +19,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.core.registry import (
+    PriorityRegistry,
+    RegistryLevel,
+)
 from app.tools.config import (
     UNSET,
     ProjectToolsConfig,
@@ -48,7 +52,7 @@ class ToolDefinition:
     level: str = "framework"
 
 
-class ToolRegistry:
+class ToolRegistry(PriorityRegistry[ToolDefinition]):
     """
     三层工具注册表
 
@@ -84,8 +88,9 @@ class ToolRegistry:
     """
 
     def __init__(self):
-        # 框架级工具
-        self._framework_tools: dict[str, ToolDefinition] = {}
+        super().__init__()
+        # 框架级工具 (使用基类的 _framework_items)
+        self._framework_tools = self._framework_items
 
         # 项目级配置
         self._project_configs: dict[str, ProjectToolsConfig] = {}
@@ -106,6 +111,9 @@ class ToolRegistry:
         """
         tool_name = name or getattr(tool, "__name__", str(tool))
         tool_desc = description or (tool.__doc__ or "").strip().split("\n")[0]
+
+        # 同层级冲突检测
+        self._check_conflict(self._framework_tools, tool_name, RegistryLevel.FRAMEWORK)
 
         # 解析参数信息
         parameters = self._extract_parameters(tool)
@@ -382,7 +390,7 @@ class ToolRegistry:
 
     def list_framework_tools(self) -> list[str]:
         """列出所有框架级工具名称"""
-        return list(self._framework_tools.keys())
+        return self.list_framework_items()
 
     def list_project_ids(self) -> list[str]:
         """列出所有已注册的项目 ID"""

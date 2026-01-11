@@ -91,9 +91,29 @@ agent = Agent(tools=tools)
 
 ## 覆盖模式
 
-| 模式 | 说明 |
-|------|------|
-| inherit | 继承原工具，修改属性 |
-| wrap | 包装原工具，添加前后处理 |
-| replace | 完全替换实现 |
+| 模式    | 说明                     |
+| ------- | ------------------------ |
+| inherit | 继承原工具，修改属性     |
+| wrap    | 包装原工具，添加前后处理 |
+| replace | 完全替换实现             |
 
+## 冲突检测
+
+同层级注册同名工具会抛出 `RegistryConflictError`：
+
+```python
+from app.tools import get_tool_registry, RegistryConflictError
+
+registry = get_tool_registry()
+
+# 首次注册成功
+registry.register_framework_tool(my_tool, name="search")
+
+# 再次注册同名工具会抛出异常
+try:
+    registry.register_framework_tool(another_tool, name="search")
+except RegistryConflictError as e:
+    print(f"冲突: {e}")  # 'search' already registered at framework level
+```
+
+**注意**: 跨层级同名是允许的（Agent 级覆盖 Project 级覆盖 Framework 级）。

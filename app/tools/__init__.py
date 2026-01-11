@@ -15,6 +15,7 @@ Tools 抽象层
 - Tavily: 网络搜索和内容抽取
 """
 
+from app.core.registry import RegistryConflictError
 from app.tools.builtin import (
     TavilyToolNames,
     create_tavily_extract_tool,
@@ -48,6 +49,7 @@ __all__ = [
     # 注册表
     "ToolRegistry",
     "get_tool_registry",
+    "RegistryConflictError",
     # Tavily 工具
     "create_tavily_tools",
     "create_tavily_search_tool",
