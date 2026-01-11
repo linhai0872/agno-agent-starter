@@ -21,11 +21,14 @@ def get_all_teams(db: PostgresDb) -> list[Team]:
     """
     teams = []
 
-    # Research Team (示例 - 取消注释以启用)
-    # from app.teams.research_team.team import create_research_team
-    # teams.append(create_research_team(db))
+    # ============== 经典模板 Team ==============
+    from app.teams.deep_research import create_deep_research_team
 
-    # 在此添加更多 Team...
+    teams.append(create_deep_research_team(db))
+
+    # ============== 添加你的 Team ==============
+    # from app.teams.your_team.team import create_your_team
+    # teams.append(create_your_team(db))
 
     return teams
 

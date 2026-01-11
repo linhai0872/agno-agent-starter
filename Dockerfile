@@ -42,8 +42,10 @@ COPY --from=builder /opt/venv /opt/venv
 # 复制配置文件
 COPY configuration.yaml .
 
-# 复制应用代码
+# 复制应用代码和脚本
 COPY app/ ./app/
+COPY scripts/ ./scripts/
+COPY data/ ./data/
 
 # 暴露端口 (AgentOS 默认 7777)
 EXPOSE 7777
@@ -52,5 +54,5 @@ EXPOSE 7777
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:7777/health || exit 1
 
-# 启动命令
-CMD ["python", "-m", "app.main"]
+# 启动命令 (先初始化知识库，再启动服务)
+CMD ["sh", "-c", "python scripts/init_knowledge_base.py && python -m app.main"]

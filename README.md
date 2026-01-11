@@ -140,11 +140,51 @@ agno-agent-starter/
 
 ## Orchestration Modes
 
-| Mode | Use Case | Description |
-|------|----------|-------------|
-| **Agent** | Single task + Tool call | Recommended for 90% of cases, simple & efficient |
-| **Team** | Multi-role collaboration | Automatic coordination among members |
-| **Workflow** | Strict steps + Conditionals | Process control and state management |
+| Mode         | Use Case                    | Description                                      |
+| ------------ | --------------------------- | ------------------------------------------------ |
+| **Agent**    | Single task + Tool call     | Recommended for 90% of cases, simple & efficient |
+| **Team**     | Multi-role collaboration    | Automatic coordination among members             |
+| **Workflow** | Strict steps + Conditionals | Process control and state management             |
+
+## Classic Templates
+
+This project includes 3 production-ready templates demonstrating Agno best practices:
+
+| Template             | Type     | Description                        | Key Features                                   |
+| -------------------- | -------- | ---------------------------------- | ---------------------------------------------- |
+| **GitHub Analyzer**  | Agent    | Analyze GitHub repositories        | Structured Output, DuckDuckGoTools             |
+| **Deep Research**    | Team     | Multi-agent collaborative research | session_state, ToolCallGuard, 4-agent workflow |
+| **Customer Service** | Workflow | Smart customer support with RAG    | Condition routing, PgVector hybrid search      |
+
+### GitHub Analyzer Agent
+
+```python
+from app.agents.github_analyzer import create_github_analyzer_agent
+
+agent = create_github_analyzer_agent(db)
+response = agent.run("Analyze https://github.com/agno-agi/agno")
+# Returns: GitHubRepoAnalysis (structured output)
+```
+
+### Deep Research Team
+
+```python
+from app.teams.deep_research import create_deep_research_team
+
+team = create_deep_research_team(db)
+response = team.run("Research AI Agent framework trends")
+# Returns: ResearchReport with findings, sources, recommendations
+```
+
+### Customer Service Workflow
+
+```python
+from app.workflows.customer_service import create_customer_service_workflow
+
+workflow = create_customer_service_workflow(db)
+response = workflow.run("How do I view my billing?")
+# Returns: ServiceResponse with answer, category, sources
+```
 
 Detailed development guides:
 - [Agents Guide](app/agents/README_EN.md)
@@ -154,11 +194,11 @@ Detailed development guides:
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API Key |
-| `DATABASE_URL` | No | PostgreSQL connection (Default provided by Docker) |
-| `DEBUG_MODE` | No | Dev mode with Hot Reload |
+| Variable             | Required | Description                                        |
+| -------------------- | -------- | -------------------------------------------------- |
+| `OPENROUTER_API_KEY` | Yes      | OpenRouter API Key                                 |
+| `DATABASE_URL`       | No       | PostgreSQL connection (Default provided by Docker) |
+| `DEBUG_MODE`         | No       | Dev mode with Hot Reload                           |
 
 Full configuration: [.env.example](.env.example)
 

@@ -21,11 +21,14 @@ def get_all_workflows(db: PostgresDb) -> list[Workflow]:
     """
     workflows = []
 
-    # Content Pipeline (示例 - 取消注释以启用)
-    # from app.workflows.content_pipeline.workflow import create_content_pipeline
-    # workflows.append(create_content_pipeline(db))
+    # ============== 经典模板 Workflow ==============
+    from app.workflows.customer_service import create_customer_service_workflow
 
-    # 在此添加更多 Workflow...
+    workflows.append(create_customer_service_workflow(db))
+
+    # ============== 添加你的 Workflow ==============
+    # from app.workflows.your_workflow.workflow import create_your_workflow
+    # workflows.append(create_your_workflow(db))
 
     return workflows
 

@@ -20,20 +20,10 @@ def get_all_agents(db: PostgresDb) -> list[Agent]:
     """
     agents = []
 
-    # ============== 示例 Agent ==============
+    # ============== 经典模板 Agent ==============
+    from app.agents.github_analyzer import create_github_analyzer_agent
 
-    # Structured Output Agent - 电影剧本（官方推荐的结构化输出模式）
-    from app.agents.structured_output.agent import create_movie_script_agent
-
-    agents.append(create_movie_script_agent(db))
-
-    # Structured Output Agent - 研究报告
-    # from app.agents.structured_output.agent import create_research_report_agent
-    # agents.append(create_research_report_agent(db))
-
-    # Knowledge RAG Agent
-    # from app.agents.knowledge_rag.agent import create_knowledge_rag_agent
-    # agents.append(create_knowledge_rag_agent(db))
+    agents.append(create_github_analyzer_agent(db))
 
     # ============== 添加你的 Agent ==============
     # from app.agents.your_agent.agent import create_your_agent
