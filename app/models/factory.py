@@ -16,7 +16,9 @@ from app.models.config import (
     StructuredOutputConfig,
     WebSearchConfig,
 )
+from app.models.provider_registry import get_registry
 from app.models.registry import MODEL_REGISTRY, ModelCapabilities
+from app.models.variants import ModelVariant
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ def get_model_info(model_id: str) -> ModelCapabilities | None:
 def create_model(
     config: ModelConfig,
     project_config: ProjectConfig | None = None,
+    variant: ModelVariant | None = None,
 ) -> Any:
     """
     根据配置创建模型实例 (多厂商路由)
@@ -59,53 +62,13 @@ def create_model(
     Args:
         config: 模型配置
         project_config: 项目级配置（可选）
+        variant: 模型变体（可选，如 FAST/BALANCED/CREATIVE/PRECISE）
 
     Returns:
         模型实例 (Agno Model 或自定义适配器)
     """
-    match config.provider:
-        case ModelProvider.OPENROUTER:
-            from app.models.providers.openrouter import create_openrouter_model
-
-            return create_openrouter_model(config, project_config)
-
-        case ModelProvider.OPENAI:
-            from app.models.providers.openai import create_openai_model
-
-            return create_openai_model(config, project_config)
-
-        case ModelProvider.GOOGLE:
-            from app.models.providers.google import create_google_model
-
-            return create_google_model(config, project_config)
-
-        case ModelProvider.ANTHROPIC:
-            from app.models.providers.anthropic import create_anthropic_model
-
-            return create_anthropic_model(config, project_config)
-
-        case ModelProvider.DASHSCOPE:
-            from app.models.providers.dashscope import create_dashscope_model
-
-            return create_dashscope_model(config, project_config)
-
-        case ModelProvider.VOLCENGINE:
-            from app.models.providers.volcengine import create_volcengine_model
-
-            return create_volcengine_model(config, project_config)
-
-        case ModelProvider.OLLAMA:
-            from app.models.providers.ollama import create_ollama_model
-
-            return create_ollama_model(config, project_config)
-
-        case ModelProvider.LITELLM:
-            from app.models.providers.litellm import create_litellm_model
-
-            return create_litellm_model(config, project_config)
-
-        case _:
-            raise ValueError(f"Unsupported model provider: {config.provider}")
+    registry = get_registry()
+    return registry.get_model(config, project_config, variant)
 
 
 def create_model_from_dict(config_dict: dict[str, Any]) -> Any:

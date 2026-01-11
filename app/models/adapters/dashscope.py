@@ -1,5 +1,5 @@
 """
-阿里云 DashScope 模型适配器
+阿里云 DashScope 适配器
 
 使用 dashscope 官方 SDK。
 支持: Qwen-Plus, Qwen-Max, Qwen-VL, qwen-long
@@ -7,38 +7,13 @@
 """
 
 import logging
-import os
 from collections.abc import Iterator
 from typing import Any
 
-from app.models.config import PROVIDER_DEFAULT_ENV_VARS, ModelConfig, ModelProvider, ProjectConfig
+from app.models.adapters.base import BaseModelAdapter
+from app.models.config import ModelConfig, ProjectConfig
 
 logger = logging.getLogger(__name__)
-
-
-def _get_api_key(
-    config: ModelConfig,
-    project_config: ProjectConfig | None,
-) -> str | None:
-    """三层 API Key 优先级获取"""
-    # 1. Agent 级
-    if config.api_key_env:
-        api_key = os.environ.get(config.api_key_env)
-        if api_key:
-            return api_key
-
-    # 2. Project 级
-    if project_config and project_config.api_key_env:
-        api_key = os.environ.get(project_config.api_key_env)
-        if api_key:
-            return api_key
-
-    # 3. Global 级
-    default_env = PROVIDER_DEFAULT_ENV_VARS.get(ModelProvider.DASHSCOPE)
-    if default_env:
-        return os.environ.get(default_env)
-
-    return None
 
 
 class DashScopeModel:
@@ -66,19 +41,19 @@ class DashScopeModel:
         self.api_key = api_key
         try:
             import dashscope
-        except ImportError:
-            raise ImportError("dashscope package not found. Install with: pip install dashscope")
+        except ImportError as e:
+            raise ImportError(
+                "dashscope package not found. Install with: pip install dashscope"
+            ) from e
 
-        # 设置 API Key (DashScope SDK 使用全局设置)
         dashscope.api_key = api_key
-
         self.model_id = model_id
         self.config = config
         self._dashscope = dashscope
 
     def _build_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
         """构建 DashScope API 参数"""
-        params = {
+        params: dict[str, Any] = {
             "model": self.model_id,
             "messages": messages,
         }
@@ -100,9 +75,11 @@ class DashScopeModel:
         # 联网搜索
         if self.config.web_search.enabled:
             params["enable_search"] = True
-            search_options = {}
+            search_options: dict[str, Any] = {}
             if self.config.web_search.dashscope_search_strategy != "standard":
-                search_options["search_strategy"] = self.config.web_search.dashscope_search_strategy
+                search_options["search_strategy"] = (
+                    self.config.web_search.dashscope_search_strategy
+                )
             if self.config.web_search.dashscope_forced_search:
                 search_options["forced_search"] = True
             if search_options:
@@ -139,15 +116,7 @@ class DashScopeModel:
         自动检测多模态消息并使用对应 API:
         - 多模态消息 (图片/视频): MultiModalConversation
         - 纯文本消息: Generation
-
-        Args:
-            messages: 消息列表
-            stream: 是否流式输出
-
-        Returns:
-            响应对象或流式迭代器
         """
-        # 检测是否为多模态消息
         if self._is_multimodal(messages):
             return self._chat_multimodal(messages, stream)
         else:
@@ -180,10 +149,9 @@ class DashScopeModel:
         """多模态对话 - 使用 MultiModalConversation API"""
         from dashscope import MultiModalConversation
 
-        # 多模态 API 使用不同的模型名称
         model_id = self.model_id
         if not model_id.startswith("qwen-vl"):
-            model_id = "qwen-vl-max"  # 默认使用 qwen-vl-max
+            model_id = "qwen-vl-max"
 
         if stream:
             responses = MultiModalConversation.call(
@@ -200,15 +168,18 @@ class DashScopeModel:
             )
             return self._handle_multimodal_response(response)
 
-    def _handle_multimodal_response(self, response) -> dict[str, Any]:
+    def _handle_multimodal_response(self, response: Any) -> dict[str, Any]:
         """处理多模态非流式响应"""
         if response.status_code != 200:
-            raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
+            raise RuntimeError(
+                f"DashScope API error: {response.code} - {response.message}"
+            )
 
         content = response.output.choices[0].message.content
-        # 多模态响应的 content 可能是 list 格式
         if isinstance(content, list):
-            text = "".join([c.get("text", "") for c in content if isinstance(c, dict)])
+            text = "".join(
+                [c.get("text", "") for c in content if isinstance(c, dict)]
+            )
         else:
             text = content
 
@@ -222,15 +193,21 @@ class DashScopeModel:
             "raw": response,
         }
 
-    def _handle_multimodal_stream(self, responses) -> Iterator[dict[str, Any]]:
+    def _handle_multimodal_stream(
+        self, responses: Any
+    ) -> Iterator[dict[str, Any]]:
         """处理多模态流式响应"""
         for response in responses:
             if response.status_code != 200:
-                raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
+                raise RuntimeError(
+                    f"DashScope API error: {response.code} - {response.message}"
+                )
 
             content = response.output.choices[0].message.content
             if isinstance(content, list):
-                text = "".join([c.get("text", "") for c in content if isinstance(c, dict)])
+                text = "".join(
+                    [c.get("text", "") for c in content if isinstance(c, dict)]
+                )
             else:
                 text = content or ""
 
@@ -239,10 +216,12 @@ class DashScopeModel:
                 "raw": response,
             }
 
-    def _handle_response(self, response) -> dict[str, Any]:
+    def _handle_response(self, response: Any) -> dict[str, Any]:
         """处理非流式响应"""
         if response.status_code != 200:
-            raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
+            raise RuntimeError(
+                f"DashScope API error: {response.code} - {response.message}"
+            )
 
         return {
             "content": response.output.text
@@ -256,11 +235,13 @@ class DashScopeModel:
             "raw": response,
         }
 
-    def _handle_stream(self, responses) -> Iterator[dict[str, Any]]:
+    def _handle_stream(self, responses: Any) -> Iterator[dict[str, Any]]:
         """处理流式响应"""
         for response in responses:
             if response.status_code != 200:
-                raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
+                raise RuntimeError(
+                    f"DashScope API error: {response.code} - {response.message}"
+                )
 
             content = ""
             if hasattr(response.output, "text"):
@@ -277,14 +258,14 @@ class DashScopeModel:
                 "raw": response,
             }
 
-    # ============== PDF 文件处理 (使用 OpenAI 兼容接口) ==============
-
-    def _get_openai_client(self):
+    def _get_openai_client(self) -> Any:
         """获取 OpenAI 兼容客户端"""
         try:
             from openai import OpenAI
-        except ImportError:
-            raise ImportError("openai package not found. Install with: pip install openai")
+        except ImportError as e:
+            raise ImportError(
+                "openai package not found. Install with: pip install openai"
+            ) from e
 
         return OpenAI(
             api_key=self.api_key,
@@ -292,15 +273,7 @@ class DashScopeModel:
         )
 
     def upload_file(self, file_path: str) -> str:
-        """
-        上传文件到 DashScope (用于 qwen-long 文档理解)
-
-        Args:
-            file_path: 本地文件路径
-
-        Returns:
-            file_id: 文件 ID，用于后续调用
-        """
+        """上传文件到 DashScope (用于 qwen-long 文档理解)"""
         client = self._get_openai_client()
 
         with open(file_path, "rb") as f:
@@ -315,17 +288,7 @@ class DashScopeModel:
         query: str,
         model_id: str | None = None,
     ) -> dict[str, Any]:
-        """
-        使用 qwen-long 处理已上传的文件
-
-        Args:
-            file_id: 上传文件返回的 file_id
-            query: 用户问题
-            model_id: 模型 ID，默认使用 qwen-long
-
-        Returns:
-            响应字典
-        """
+        """使用 qwen-long 处理已上传的文件"""
         client = self._get_openai_client()
 
         response = client.chat.completions.create(
@@ -352,47 +315,34 @@ class DashScopeModel:
         query: str,
         model_id: str | None = None,
     ) -> dict[str, Any]:
-        """
-        便捷方法：上传 PDF 并提问
-
-        Args:
-            file_path: PDF 文件路径
-            query: 用户问题
-            model_id: 模型 ID，默认使用 qwen-long
-
-        Returns:
-            响应字典
-        """
+        """便捷方法：上传 PDF 并提问"""
         file_id = self.upload_file(file_path)
         return self.chat_with_file(file_id, query, model_id)
 
 
-def create_dashscope_model(
-    config: ModelConfig,
-    project_config: ProjectConfig | None = None,
-) -> DashScopeModel:
-    """
-    创建 DashScope 模型实例
+class DashScopeAdapter(BaseModelAdapter):
+    """DashScope 适配器"""
 
-    Args:
-        config: 模型配置
-        project_config: 项目级配置
+    def __init__(self):
+        super().__init__("dashscope", "阿里云 DashScope")
 
-    Returns:
-        DashScope 模型适配器实例
-    """
-    api_key = _get_api_key(config, project_config)
+    def create_model(
+        self,
+        config: ModelConfig,
+        project_config: ProjectConfig | None = None,
+    ) -> DashScopeModel:
+        """创建 DashScope 模型实例"""
+        api_key = self.get_api_key(config, project_config)
 
-    if not api_key:
-        raise ValueError(
-            "DashScope API Key not found. Please set one of: "
-            f"config.api_key_env, project_config.api_key_env, or {PROVIDER_DEFAULT_ENV_VARS.get(ModelProvider.DASHSCOPE)}"
+        if not api_key:
+            raise ValueError(
+                f"DashScope API Key not found. Set: {self.default_env_var}"
+            )
+
+        logger.info("Creating DashScope model: %s", config.model_id)
+
+        return DashScopeModel(
+            model_id=config.model_id,
+            api_key=api_key,
+            config=config,
         )
-
-    logger.info("Creating DashScope model: %s", config.model_id)
-
-    return DashScopeModel(
-        model_id=config.model_id,
-        api_key=api_key,
-        config=config,
-    )

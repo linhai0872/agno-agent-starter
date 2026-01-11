@@ -28,7 +28,6 @@ from app.models.factory import (
     create_anthropic_claude,
     create_claude_sonnet,
     create_dashscope_qwen,
-    # OpenRouter 便捷函数
     create_gemini_flash,
     create_gemini_pro,
     create_google_gemini,
@@ -36,17 +35,15 @@ from app.models.factory import (
     create_model,
     create_model_from_dict,
     create_ollama_local,
-    # 直连便捷函数
     create_openai_gpt4o,
     create_volcengine_doubao,
     get_model_info,
 )
-from app.models.providers.guarded import (
-    GuardedOpenRouter,
-    create_guarded_openrouter,
-    create_guarded_openrouter_model,
-)
+from app.models.features import ModelFeature
+from app.models.pricing import ModelPricing
+from app.models.provider_registry import ProviderRegistry, get_registry
 from app.models.registry import MODEL_REGISTRY, ModelCapabilities
+from app.models.variants import ModelVariant
 
 __all__ = [
     # 配置类
@@ -60,6 +57,10 @@ __all__ = [
     "MemoryConfig",
     "KnowledgeConfig",
     "PROVIDER_DEFAULT_ENV_VARS",
+    # 新增: 能力/变体/定价
+    "ModelFeature",
+    "ModelVariant",
+    "ModelPricing",
     # 工厂函数
     "create_model",
     "create_model_from_dict",
@@ -79,8 +80,7 @@ __all__ = [
     # 注册表
     "MODEL_REGISTRY",
     "ModelCapabilities",
-    # 迭代防护模型
-    "GuardedOpenRouter",
-    "create_guarded_openrouter",
-    "create_guarded_openrouter_model",
+    "ProviderRegistry",
+    "get_registry",
 ]
+

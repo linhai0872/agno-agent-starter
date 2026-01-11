@@ -6,7 +6,12 @@
 """
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+from app.models.features import ModelFeature
+
+if TYPE_CHECKING:
+    from app.models.pricing import ModelPricing
 
 
 @dataclass
@@ -31,27 +36,35 @@ class ModelCapabilities:
     # 输出模态: text, audio
     output_modalities: list[str] = field(default_factory=lambda: ["text"])
 
-    # 定价 (每百万 token)
-    pricing_prompt: float = 0.0  # 输入价格
-    pricing_completion: float = 0.0  # 输出价格
+    # 定价 (每百万 token) - 保留旧字段向后兼容
+    pricing_prompt: float = 0.0
+    pricing_completion: float = 0.0
 
-    # 能力标记
-    supports_reasoning: bool = False  # 支持思考模式
-    supports_tools: bool = False  # 支持工具调用
-    supports_structured_output: bool = False  # 支持结构化输出
-    supports_vision: bool = False  # 支持视觉输入
-    supports_file: bool = False  # 支持文件输入
-    supports_audio: bool = False  # 支持音频输入
-    supports_video: bool = False  # 支持视频输入
+    # 能力标记 - 保留旧布尔字段向后兼容
+    supports_reasoning: bool = False
+    supports_tools: bool = False
+    supports_structured_output: bool = False
+    supports_vision: bool = False
+    supports_file: bool = False
+    supports_audio: bool = False
+    supports_video: bool = False
 
     # 思考模式类型: effort / max_tokens / none
     reasoning_type: Literal["effort", "max_tokens", "none"] = "none"
 
-    def __post_init__(self):
+    # 新增: 统一能力发现
+    features: list[ModelFeature] = field(default_factory=list)
+    # 新增: 规范定价 (含 currency)
+    pricing: "ModelPricing | None" = None
+    # 新增: 变体映射
+    variants: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
         """根据 supported_parameters 和 input_modalities 推断能力"""
         params = set(self.supported_parameters)
         modalities = set(self.input_modalities)
 
+        # 推断布尔字段 (向后兼容)
         self.supports_reasoning = "reasoning" in params
         self.supports_tools = "tools" in params
         self.supports_structured_output = "structured_outputs" in params
@@ -60,20 +73,44 @@ class ModelCapabilities:
         self.supports_audio = "audio" in modalities
         self.supports_video = "video" in modalities
 
+        # 推断 features (新 API)
+        if "reasoning" in params and ModelFeature.REASONING not in self.features:
+            self.features.append(ModelFeature.REASONING)
+        if "tools" in params and ModelFeature.TOOL_CALL not in self.features:
+            self.features.append(ModelFeature.TOOL_CALL)
+        if "structured_outputs" in params and ModelFeature.STRUCTURED_OUTPUT not in self.features:
+            self.features.append(ModelFeature.STRUCTURED_OUTPUT)
+        if "image" in modalities and ModelFeature.VISION not in self.features:
+            self.features.append(ModelFeature.VISION)
+        if "file" in modalities and ModelFeature.DOCUMENT not in self.features:
+            self.features.append(ModelFeature.DOCUMENT)
+        if "audio" in modalities and ModelFeature.AUDIO not in self.features:
+            self.features.append(ModelFeature.AUDIO)
+        if "video" in modalities and ModelFeature.VIDEO not in self.features:
+            self.features.append(ModelFeature.VIDEO)
+
+        # 同步 pricing (如果未设置)
+        if self.pricing is None and (self.pricing_prompt or self.pricing_completion):
+            from app.models.pricing import ModelPricing
+
+            self.pricing = ModelPricing.from_per_million(
+                self.pricing_prompt, self.pricing_completion
+            )
+
         # 推断思考模式类型
         if self.supports_reasoning:
-            # Gemini 系列使用 max_tokens
             if "gemini" in self.model_id.lower():
                 self.reasoning_type = "max_tokens"
-            # OpenAI o 系列使用 effort
             elif any(x in self.model_id.lower() for x in ["o1", "o3", "gpt-5"]):
                 self.reasoning_type = "effort"
-            # Anthropic 使用 max_tokens
             elif "anthropic" in self.model_id.lower() or "deepseek" in self.model_id.lower():
                 self.reasoning_type = "max_tokens"
-            # 其他默认使用 effort
             else:
                 self.reasoning_type = "effort"
+
+    def has_feature(self, feature: ModelFeature) -> bool:
+        """检查是否支持某能力 (推荐 API)"""
+        return feature in self.features
 
 
 # 常用模型能力注册表（基于 OpenRouter API 数据）

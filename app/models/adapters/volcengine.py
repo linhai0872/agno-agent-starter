@@ -1,5 +1,5 @@
 """
-火山方舟模型适配器
+火山方舟适配器
 
 使用 volcenginesdkarkruntime 官方 SDK。
 支持: 豆包 Seed 系列, DeepSeek 系列
@@ -7,38 +7,13 @@
 """
 
 import logging
-import os
 from collections.abc import Iterator
 from typing import Any
 
-from app.models.config import PROVIDER_DEFAULT_ENV_VARS, ModelConfig, ModelProvider, ProjectConfig
+from app.models.adapters.base import BaseModelAdapter
+from app.models.config import ModelConfig, ProjectConfig
 
 logger = logging.getLogger(__name__)
-
-
-def _get_api_key(
-    config: ModelConfig,
-    project_config: ProjectConfig | None,
-) -> str | None:
-    """三层 API Key 优先级获取"""
-    # 1. Agent 级
-    if config.api_key_env:
-        api_key = os.environ.get(config.api_key_env)
-        if api_key:
-            return api_key
-
-    # 2. Project 级
-    if project_config and project_config.api_key_env:
-        api_key = os.environ.get(project_config.api_key_env)
-        if api_key:
-            return api_key
-
-    # 3. Global 级
-    default_env = PROVIDER_DEFAULT_ENV_VARS.get(ModelProvider.VOLCENGINE)
-    if default_env:
-        return os.environ.get(default_env)
-
-    return None
 
 
 class VolcengineModel:
@@ -60,22 +35,23 @@ class VolcengineModel:
     ):
         try:
             from volcenginesdkarkruntime import Ark
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
-                "volcenginesdkarkruntime package not found. Install with: pip install volcengine-python-sdk[ark]"
-            )
+                "volcenginesdkarkruntime package not found. "
+                "Install with: pip install volcengine-python-sdk[ark]"
+            ) from e
 
         self.client = Ark(
             api_key=api_key,
             base_url="https://ark.cn-beijing.volces.com/api/v3",
-            timeout=1800,  # 深度思考可能需要更长超时
+            timeout=1800,
         )
         self.model_id = model_id
         self.config = config
 
     def _build_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
         """构建火山方舟 API 参数"""
-        params = {
+        params: dict[str, Any] = {
             "model": self.model_id,
             "messages": messages,
         }
@@ -96,7 +72,9 @@ class VolcengineModel:
 
         # 深度思考 (豆包 Seed 系列)
         if self.config.reasoning.enabled:
-            params["thinking"] = {"type": self.config.reasoning.volcengine_thinking_type}
+            params["thinking"] = {
+                "type": self.config.reasoning.volcengine_thinking_type
+            }
 
         # 结构化输出
         if self.config.structured_output.enabled:
@@ -117,7 +95,7 @@ class VolcengineModel:
             self.config.multimodal.volcengine_max_pixels
             or self.config.multimodal.volcengine_min_pixels
         ):
-            image_limit = {}
+            image_limit: dict[str, int] = {}
             if self.config.multimodal.volcengine_max_pixels:
                 image_limit["max_pixels"] = self.config.multimodal.volcengine_max_pixels
             if self.config.multimodal.volcengine_min_pixels:
@@ -131,16 +109,17 @@ class VolcengineModel:
         if not self.config.web_search.enabled:
             return []
 
-        tool = {
+        tool: dict[str, Any] = {
             "type": "web_search",
             "web_search": {
                 "enable": True,
             },
         }
 
-        # 搜索参数
         if self.config.web_search.volcengine_max_keyword != 3:
-            tool["web_search"]["max_keyword"] = self.config.web_search.volcengine_max_keyword
+            tool["web_search"]["max_keyword"] = (
+                self.config.web_search.volcengine_max_keyword
+            )
         if self.config.web_search.volcengine_limit != 10:
             tool["web_search"]["limit"] = self.config.web_search.volcengine_limit
         if self.config.web_search.volcengine_sources:
@@ -154,20 +133,9 @@ class VolcengineModel:
         stream: bool = False,
         tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any] | Iterator[dict[str, Any]]:
-        """
-        发送聊天请求
-
-        Args:
-            messages: 消息列表
-            stream: 是否流式输出
-            tools: 工具列表（可选，会与内置搜索工具合并）
-
-        Returns:
-            响应对象或流式迭代器
-        """
+        """发送聊天请求"""
         params = self._build_params(messages)
 
-        # 合并工具
         all_tools = self._build_web_search_tools()
         if tools:
             all_tools.extend(tools)
@@ -182,11 +150,11 @@ class VolcengineModel:
             response = self.client.chat.completions.create(**params)
             return self._handle_response(response)
 
-    def _handle_response(self, response) -> dict[str, Any]:
+    def _handle_response(self, response: Any) -> dict[str, Any]:
         """处理非流式响应"""
         choice = response.choices[0]
 
-        result = {
+        result: dict[str, Any] = {
             "content": choice.message.content,
             "usage": {
                 "prompt_tokens": response.usage.prompt_tokens,
@@ -196,17 +164,18 @@ class VolcengineModel:
             "raw": response,
         }
 
-        # 思考过程
-        if hasattr(choice.message, "reasoning_content") and choice.message.reasoning_content:
+        if (
+            hasattr(choice.message, "reasoning_content")
+            and choice.message.reasoning_content
+        ):
             result["reasoning"] = choice.message.reasoning_content
 
-        # 工具调用
         if hasattr(choice.message, "tool_calls") and choice.message.tool_calls:
             result["tool_calls"] = choice.message.tool_calls
 
         return result
 
-    def _handle_stream(self, response) -> Iterator[dict[str, Any]]:
+    def _handle_stream(self, response: Any) -> Iterator[dict[str, Any]]:
         """处理流式响应"""
         for chunk in response:
             if not chunk.choices:
@@ -214,44 +183,40 @@ class VolcengineModel:
 
             delta = chunk.choices[0].delta
 
-            result = {
+            result: dict[str, Any] = {
                 "content": delta.content or "",
                 "raw": chunk,
             }
 
-            # 思考过程
             if hasattr(delta, "reasoning_content") and delta.reasoning_content:
                 result["reasoning"] = delta.reasoning_content
 
             yield result
 
 
-def create_volcengine_model(
-    config: ModelConfig,
-    project_config: ProjectConfig | None = None,
-) -> VolcengineModel:
-    """
-    创建火山方舟模型实例
+class VolcengineAdapter(BaseModelAdapter):
+    """火山方舟适配器"""
 
-    Args:
-        config: 模型配置
-        project_config: 项目级配置
+    def __init__(self):
+        super().__init__("volcengine", "火山方舟")
 
-    Returns:
-        火山方舟模型适配器实例
-    """
-    api_key = _get_api_key(config, project_config)
+    def create_model(
+        self,
+        config: ModelConfig,
+        project_config: ProjectConfig | None = None,
+    ) -> VolcengineModel:
+        """创建火山方舟模型实例"""
+        api_key = self.get_api_key(config, project_config)
 
-    if not api_key:
-        raise ValueError(
-            "Volcengine Ark API Key not found. Please set one of: "
-            f"config.api_key_env, project_config.api_key_env, or {PROVIDER_DEFAULT_ENV_VARS.get(ModelProvider.VOLCENGINE)}"
+        if not api_key:
+            raise ValueError(
+                f"Volcengine Ark API Key not found. Set: {self.default_env_var}"
+            )
+
+        logger.info("Creating Volcengine model: %s", config.model_id)
+
+        return VolcengineModel(
+            model_id=config.model_id,
+            api_key=api_key,
+            config=config,
         )
-
-    logger.info("Creating Volcengine model: %s", config.model_id)
-
-    return VolcengineModel(
-        model_id=config.model_id,
-        api_key=api_key,
-        config=config,
-    )
