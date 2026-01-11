@@ -5,11 +5,22 @@ globs: ["**/*.py"]
 
 # Agno Agent Service 开发规范
 
+_完整规范请参阅项目根目录 [AGENTS.md](../../AGENTS.md)_
+
 ## 核心哲学
 
-1. **AgentOS First** - 使用 AgentOS 标准 API，不自己写 FastAPI 路由
-2. **Single Agent 优先** - 90% 场景用单 Agent + 工具解决，避免过度使用 Team/Workflow
-3. **配置与代码分离** - 模型参数用 ModelConfig 配置，不硬编码
+1. **AgentOS First** — 使用 AgentOS 标准 API，不手写 FastAPI 路由
+2. **Single Agent 优先** — 90% 场景用单 Agent + 工具解决
+3. **配置与代码分离** — 模型参数用 `ModelConfig` 配置，不硬编码
+
+## 命名规则
+
+| 元素 | 规则 | 示例 |
+|------|------|------|
+| Agent ID | `kebab-case` | `github-analyzer` |
+| 文件名 | `snake_case.py` | `github_analyzer.py` |
+| 类名 | `PascalCase` | `GitHubAnalyzer` |
+| 函数/变量 | `snake_case` | `analyze_repo` |
 
 ## 关键规则
 
@@ -20,21 +31,12 @@ globs: ["**/*.py"]
 ### 模型配置
 - 使用 `app/models/ModelConfig` 统一接口
 - OpenRouter 是主要模型提供商
-- 思考模式用 ReasoningConfig，网络搜索用 WebSearchConfig
-- 切换模型只需修改 MODEL_CONFIG
+- 切换模型只需修改 `ModelConfig`
 
 ### API Key 优先级
 1. Agent 级: `ModelConfig(api_key_env="XXX_KEY")`
 2. Project 级: `ProjectConfig(api_key_env="XXX_KEY")`
 3. Global 级: `OPENROUTER_API_KEY` 环境变量
-
-### 命名规范
-- Agent ID 使用 kebab-case: `my-agent`
-- Agent ID 决定 API URL: `/agents/{agent_id}/runs`
-
-### 数据库
-- 生产环境必须用 PostgresDb
-- 开发可用 SqliteDb
 
 ### 代码风格
 - 禁止在 print/log 中使用 emoji
@@ -43,7 +45,7 @@ globs: ["**/*.py"]
 
 ## 常见错误
 
-- 自己写 FastAPI 路由（应让 AgentOS 自动生成）
+- 手写 FastAPI 路由（应让 AgentOS 自动生成）
 - 在环境变量里配置模型参数（应在代码中用 ModelConfig）
 - 使用 Team 解决单 Agent 能处理的任务
 - 忘记在 `__init__.py` 注册新 Agent

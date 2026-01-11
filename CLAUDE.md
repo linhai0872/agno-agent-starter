@@ -1,67 +1,31 @@
-# Agno Agent Service 开发规范
+# Claude Code 开发规范
 
-## 核心哲学
+本文档为 Claude Code 专用配置。完整开发规范请参阅 **[AGENTS.md](AGENTS.md)**。
 
-1. **AgentOS First** - 使用 AgentOS 标准 API，不自己写 FastAPI 路由
-2. **Single Agent 优先** - 90% 场景用单 Agent + 工具解决，避免过度使用 Team/Workflow
-3. **配置与代码分离** - 模型参数用 ModelConfig 配置，不硬编码
+---
 
-## 关键规则
+## 引用主规范
 
-### 性能
-- 禁止在循环中创建 Agent，Agent 实例是重量级对象
-- 创建一次，复用多次
+所有开发规范、命名约定、模型配置、常见任务等内容，请参考：
 
-### 模型配置
-- 使用 `app/models/ModelConfig` 统一接口
-- OpenRouter 是主要模型提供商
-- 思考模式用 ReasoningConfig，网络搜索用 WebSearchConfig
-- 切换模型只需修改 MODEL_CONFIG
+→ **[AGENTS.md](AGENTS.md)**
 
-### API Key 优先级
-1. Agent 级: `ModelConfig(api_key_env="XXX_KEY")`
-2. Project 级: `ProjectConfig(api_key_env="XXX_KEY")`
-3. Global 级: `OPENROUTER_API_KEY` 环境变量
+---
 
-### 命名规范
-- Agent ID 使用 kebab-case: `my-agent`
-- Agent ID 决定 API URL: `/agents/{agent_id}/runs`
+## Claude 专用说明
 
-### 数据库
-- 生产环境必须用 PostgresDb
-- 开发可用 SqliteDb
+### 文件编辑
 
-### 代码风格
-- 禁止在 print/log 中使用 emoji
-- 工具函数返回 str，让模型处理
-- 新 Agent 必须在 `app/agents/__init__.py` 注册
+- 编辑代码时遵循 AGENTS.md 中的命名规则和代码风格
+- 新建 Agent/Team/Workflow 后，务必在 `__init__.py` 注册
 
-## 常见错误
+### 命令执行
 
-- 自己写 FastAPI 路由（应让 AgentOS 自动生成）
-- 在环境变量里配置模型参数（应在代码中用 ModelConfig）
-- 使用 Team 解决单 Agent 能处理的任务
-- 忘记在 `__init__.py` 注册新 Agent
+- 开发服务器假设已运行，不要执行 `docker compose up` 或 `uvicorn` 启动命令
+- 可安全执行：`ruff check .`、`mypy app/`、`pytest tests/`
 
-## 快速参考
+### 项目上下文
 
-```python
-# Agent 模板
-from app.models import ModelConfig, create_model
-
-AGENT_MODEL_CONFIG = ModelConfig(
-    model_id="google/gemini-2.5-flash-preview-09-2025",
-    temperature=0.1,
-    max_tokens=16384,
-)
-
-def create_my_agent(db: PostgresDb) -> Agent:
-    return Agent(
-        id="my-agent",
-        model=create_model(AGENT_MODEL_CONFIG),
-        db=db,
-        instructions=SYSTEM_PROMPT,
-        tools=[...],
-    )
-```
-
+如需了解项目架构和实现规则，请参阅：
+- [项目上下文](_bmad-output/project-context.md)
+- [架构文档](_bmad-output/planning-artifacts/architecture.md)

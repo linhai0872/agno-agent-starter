@@ -1,0 +1,10 @@
+{
+    "_comment": "This file is auto-generated. Run `python scripts/export_openapi.py` with dev server running.",
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Agno Agent Service",
+        "description": "高性能智能体编排框架，支持实体验证、信息丰富等业务场景",
+        "version": "0.1.0"
+    },
+    "paths": {}
+}

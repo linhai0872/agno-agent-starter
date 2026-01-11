@@ -2,50 +2,57 @@
   <a href="README.md">English</a>
 </p>
 
+<div align="center">
+
 # Agno Agent Starter
 
-基于 [Agno](https://github.com/agno-agi/agno) + [AgentOS](https://docs.agno.com/agent-os/overview) 的生产级 AI Agent 编排框架脚手架。
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Agno](https://img.shields.io/badge/Built%20with-Agno-orange.svg)](https://github.com/agno-agi/agno)
 
-**文档**: [Agno Docs](https://docs.agno.com) | [AgentOS](https://docs.agno.com/agent-os/overview) | [API Reference](https://docs.agno.com/reference)
+**生产级 AI Agent 脚手架，开箱即用**
 
-## 特性
+*分钟级构建、部署、扩展智能体，而非数周。*
 
-### 遵循 Agno 官方最佳实践
-- 基于 **AgentOS Runtime**，标准化 API 自动生成
-- 使用 **PostgresDb** 实现会话、记忆、知识库持久化
-- Structured Output 采用 **Pydantic Schema** + `use_json_mode`
-- **MCPTools** 官方协议集成
+[📖 文档](https://docs.agno.com) · [🍳 Cookbook](https://docs.agno.com/cookbook) · [💬 Discord](https://discord.gg/agno) · [🐛 Issues](https://github.com/linhai0872/agno-agent-starter/issues)
 
-### 清晰的项目架构
-- 模块化目录结构，**Agent/Team/Workflow** 分离
-- 各模块独立 README，开发指南完整
-- 示例代码开箱即用，复制即可开发
+</div>
 
-### 企业级功能支持
-- **多厂商模型统一接口** - 支持 OpenRouter/OpenAI/Google/Anthropic/DashScope/Volcengine/Ollama/LiteLLM 8 大厂商
-- **三层 API Key 管理** - Agent 级 > Project 级 > Global 级，计费隔离清晰
-- **三层工具注册表** - Framework/Project/Agent 级别定制，灵活复用
-- **内置安全护栏** - 内容安全检测、PII 过滤、输出验证 Hooks
+---
 
-### AI 辅助开发支持
-- 内置 `.cursor/rules/` **Vibe Coding** 规则
-- 提供 `AGENTS.md` 和 `CLAUDE.md` 开发规范
-- 适配 Cursor、Claude Code 等 AI 编程工具
+## 为什么选择 Agno Agent Starter？
 
-## Quick Start
+- 🚀 **3 步上生产** — Clone、配置、`docker compose up`
+- 🔌 **统一模型层** — 一个 `ModelConfig` 通吃所有厂商，一行代码切换
+- 🛡️ **企业就绪** — 三层 API Key 管理、内置护栏、完整追踪
+- 🤖 **AI 编程优化** — Cursor rules、AGENTS.md、Claude Code 就绪
+
+---
+
+## 快速启动
 
 ```bash
 # 1. 克隆并配置
 git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
 cp .env.example .env
-# 编辑 .env 填入 OPENROUTER_API_KEY
+# 编辑 .env → 添加 OPENROUTER_API_KEY
 
-# 2. 启动服务（开发模式，支持热重载）
+# 2. 启动
 docker compose up -d
 
-# 3. 访问
-# API 文档: http://localhost:7777/docs
-# 健康检查: http://localhost:7777/health
+# 3. 完成！打开 http://localhost:7777/docs
+```
+
+### 试一试
+
+```python
+from app.agents.github_analyzer import create_github_analyzer_agent
+from agno.db.postgres import PostgresDb
+
+db = PostgresDb(db_url="postgresql://...")
+agent = create_github_analyzer_agent(db)
+response = agent.run("分析 https://github.com/agno-agi/agno")
+# 返回: GitHubRepoAnalysis (结构化输出)
 ```
 
 ### 生产部署
@@ -56,49 +63,19 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ### 连接 Agent UI
 
-Agno 官方提供了精美的 Web UI 来管理和使用你的 Agent。
+1. 打开 [os.agno.com](https://os.agno.com) → 登录
+2. 点击 **"Add new OS"** → 选择 **"Local"**
+3. 输入: `http://localhost:7777` → **Connect**
 
-1. 打开 [os.agno.com](https://os.agno.com) 并登录
-2. 点击顶部导航栏的 **"Add new OS"**
-3. 选择 **"Local"** 连接本地 AgentOS
-4. 输入端点地址: `http://localhost:7777`
-5. 点击 **"Connect"**
+---
 
-连接成功后，你可以：
-- 与 Agents/Teams/Workflows 对话
-- 查看会话历史和记忆
-- 管理知识库
-- 监控指标和追踪
+## 核心哲学
 
-## 开发流程
+1. **AgentOS First** — 使用 AgentOS 标准 API，不手写 FastAPI 路由
+2. **Single Agent 优先** — 90% 场景用单 Agent + 工具解决
+3. **配置与代码分离** — 模型参数用 `ModelConfig`，不硬编码
 
-设计思想：**选架构 → 建目录 → 用组件 → 上生产**
-
-```
-Step 1: 选择编排模式
-        根据业务场景选择 Agent / Team / Workflow
-
-            ↓
-
-Step 2: 创建业务目录
-        在对应模块下创建独立目录，一个目录对应一个业务
-
-            ↓
-
-Step 3: 复用或扩展组件
-        使用框架内置的 Models/Tools/Hooks，或针对业务额外开发
-
-            ↓
-
-Step 4: 注册并上线
-        在 __init__.py 注册，通过 AgentOS 提供 API 服务
-```
-
-**示例：开发一个「客户研究」业务**
-1. 需要研究员和写手协作 → 选择 **Team** 模式
-2. 创建 `app/teams/customer_research/` 目录
-3. 复用 `app/models/` 的 ModelConfig，按需添加自定义工具
-4. 在 `app/teams/__init__.py` 注册，服务自动暴露 `/teams/customer-research/runs` API
+---
 
 ## 架构
 
@@ -109,14 +86,29 @@ Step 4: 注册并上线
 │   Agents          │     Teams           │     Workflows         │
 │   单 Agent 任务    │     多 Agent 协作    │     步骤流程控制       │
 ├─────────────────────────────────────────────────────────────────┤
-│                      Abstraction Layers                         │
-│   Models     │   Tools      │   Hooks      │   Knowledge        │
-│   8 厂商统一  │   三层注册表  │   护栏系统    │   RAG 支持          │
+│                      Core Abstractions                          │
+│   Models     │   Tools      │   Hooks      │   Registry         │
+│   统一接口    │   三层注册表  │   护栏系统    │   PriorityRegistry │
 ├─────────────────────────────────────────────────────────────────┤
 │                      Infrastructure                             │
 │              PostgreSQL + pgvector + Tracing                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 经典模板
+
+| 模板                 | 类型     | 说明              | 关键特性                      |
+| -------------------- | -------- | ----------------- | ----------------------------- |
+| **GitHub Analyzer**  | Agent    | 分析 GitHub 仓库  | Structured Output, DuckDuckGo |
+| **Deep Research**    | Team     | 多 Agent 协作研究 | session_state, ToolCallGuard  |
+| **Customer Service** | Workflow | 智能客服 + RAG    | 条件路由, pgvector            |
+
+**开发指南:**
+[Agents](app/agents/README.md) · [Teams](app/teams/README.md) · [Workflows](app/workflows/README.md) · [Models](app/models/README.md)
+
+---
 
 ## 项目结构
 
@@ -124,51 +116,63 @@ Step 4: 注册并上线
 agno-agent-starter/
 ├── app/
 │   ├── main.py              # AgentOS 入口
-│   ├── config.py            # 全局配置
-│   ├── agents/              # Agent 实现
-│   ├── teams/               # Team 实现
-│   ├── workflows/           # Workflow 实现
-│   ├── models/              # 模型配置
-│   ├── tools/               # 工具注册表
-│   └── hooks/               # Hooks/Guardrails
+│   ├── config.py            # 三层配置加载器
+│   ├── agents/              # ✏️ Agent 实现
+│   ├── teams/               # ✏️ Team 实现
+│   ├── workflows/           # ✏️ Workflow 实现
+│   ├── models/              # 模型抽象层 (8 厂商)
+│   ├── tools/               # 三层工具注册表
+│   ├── hooks/               # 护栏与生命周期钩子
+│   └── core/                # 注册表抽象层
+├── api/                     # OpenAPI 规格 (自动生成)
 ├── tests/                   # 单元测试
-├── .cursor/rules/           # Vibe Coding Rules
-├── docker-compose.yml       # 开发环境
-├── docker-compose.prod.yml  # 生产环境
-└── .env.example             # 环境变量模板
+└── .cursor/rules/           # Vibe Coding 规则
 ```
+
+*✏️ = 用户扩展点*
+
+---
 
 ## 三种编排模式
 
-| 模式 | 适用场景 | 说明 |
-|------|----------|------|
-| **Agent** | 单一任务 + 工具调用 | 90% 场景推荐，简单高效 |
-| **Team** | 多角色协作 | 成员间自动协调 |
-| **Workflow** | 严格步骤 + 条件分支 | 流程可控 |
+| 模式         | 适用场景        | 说明               |
+| ------------ | --------------- | ------------------ |
+| **Agent**    | 单任务 + 工具   | 90% 推荐，简单高效 |
+| **Team**     | 多角色协作      | 成员间自动协调     |
+| **Workflow** | 严格步骤 + 条件 | 流程可控           |
 
-详细开发指南:
-- [Agents 开发指南](app/agents/README.md)
-- [Teams 开发指南](app/teams/README.md)
-- [Workflows 开发指南](app/workflows/README.md)
-- [Models 配置指南](app/models/README.md)
+---
 
 ## 环境变量
 
-| 变量 | 必需 | 说明 |
-|------|------|------|
-| `OPENROUTER_API_KEY` | 是 | OpenRouter API Key |
-| `DATABASE_URL` | 否 | PostgreSQL 连接（默认 Docker 提供） |
-| `DEBUG_MODE` | 否 | 开发模式，启用热重载 |
+| 变量                 | 必需 | 说明                         |
+| -------------------- | ---- | ---------------------------- |
+| `OPENROUTER_API_KEY` | 是   | OpenRouter API Key           |
+| `DATABASE_URL`       | 否   | PostgreSQL (Docker 默认提供) |
+| `DEBUG_MODE`         | 否   | 开发热重载                   |
 
-完整配置见: [.env.example](.env.example)
+完整配置: [.env.example](.env.example)
 
-## 测试
+---
+
+## API 参考
+
+- **交互式文档**: http://localhost:7777/docs
+- **OpenAPI 规格**: [api/openapi.json](api/openapi.json)
 
 ```bash
-pytest tests/ -v
+# 导出最新规格
+python scripts/export_openapi.py
 ```
+
+---
+
+## 贡献
+
+欢迎提交 Issues 和 PRs！请先阅读 [AGENTS.md](AGENTS.md) 了解开发规范。
+
+---
 
 ## License
 
-MIT
-
+[MIT](LICENSE)

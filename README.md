@@ -2,50 +2,57 @@
   <a href="README_CN.md">中文</a>
 </p>
 
+<div align="center">
+
 # Agno Agent Starter
 
-Production-grade AI Agent orchestration framework scaffold based on [Agno](https://github.com/agno-agi/agno) + [AgentOS](https://docs.agno.com/agent-os/overview).
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Agno](https://img.shields.io/badge/Built%20with-Agno-orange.svg)](https://github.com/agno-agi/agno)
 
-**Docs**: [Agno Docs](https://docs.agno.com) | [AgentOS](https://docs.agno.com/agent-os/overview) | [API Reference](https://docs.agno.com/reference)
+**Production-grade AI Agent scaffold with batteries included**
 
-## Features
+*Build, deploy, and scale intelligent agents in minutes, not weeks.*
 
-### Following Agno Official Best Practices
-- Based on **AgentOS Runtime**, with standardized API auto-generation.
-- Persistence for sessions, memory, and knowledge base using **PostgresDb**.
-- Structured Output using **Pydantic Schema** + `use_json_mode`.
-- Official **MCPTools** protocol integration.
+[📖 Docs](https://docs.agno.com) · [🍳 Cookbook](https://docs.agno.com/cookbook) · [💬 Discord](https://discord.gg/agno) · [🐛 Issues](https://github.com/linhai0872/agno-agent-starter/issues)
 
-### Clean Architecture
-- Modular directory structure separating **Agent/Team/Workflow**.
-- Independent READMEs and complete development guides for each module.
-- Ready-to-use boilerplate code for rapid development.
+</div>
 
-### Enterprise Support
-- **Multi-provider Model Interface** - Supports 8 providers: OpenRouter/OpenAI/Google/Anthropic/DashScope/Volcengine/Ollama/LiteLLM.
-- **Three-tier API Key Management** - Agent level > Project level > Global level for clear billing isolation.
-- **Three-tier Tool Registry** - Customizable at Framework/Project/Agent levels for flexible reuse.
-- **Built-in Guardrails** - Content safety, PII filtering, and output validation hooks.
+---
 
-### AI-Assisted Development
-- Built-in `.cursor/rules/` for **Vibe Coding**.
-- Development specifications provided in `AGENTS.md` and `CLAUDE.md`.
-- Optimized for AI tools like Cursor and Claude Code.
+## Why Agno Agent Starter?
+
+- 🚀 **Zero to Production in 3 Steps** — Clone, configure, `docker compose up`
+- 🔌 **Unified Model Layer** — One `ModelConfig` for all providers, switch with one line
+- 🛡️ **Enterprise-Ready** — 3-tier API key management, built-in guardrails, full tracing
+- 🤖 **AI-Optimized** — Cursor rules, AGENTS.md, Claude Code ready
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Clone and Configure
+# 1. Clone & Configure
 git clone https://github.com/linhai0872/agno-agent-starter.git && cd agno-agent-starter
 cp .env.example .env
-# Edit .env and fill in OPENROUTER_API_KEY
+# Edit .env → add OPENROUTER_API_KEY
 
-# 2. Start Service (Dev mode with Hot Reload)
+# 2. Start
 docker compose up -d
 
-# 3. Access
-# API Docs: http://localhost:7777/docs
-# Health Check: http://localhost:7777/health
+# 3. Done! Open http://localhost:7777/docs
+```
+
+### Try It
+
+```python
+from app.agents.github_analyzer import create_github_analyzer_agent
+from agno.db.postgres import PostgresDb
+
+db = PostgresDb(db_url="postgresql://...")
+agent = create_github_analyzer_agent(db)
+response = agent.run("Analyze https://github.com/agno-agi/agno")
+# Returns: GitHubRepoAnalysis (structured output)
 ```
 
 ### Production Deployment
@@ -56,49 +63,19 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ### Connect to Agent UI
 
-Agno provides a beautiful official Web UI to manage and interact with your agents.
+1. Open [os.agno.com](https://os.agno.com) → Sign in
+2. Click **"Add new OS"** → Select **"Local"**
+3. Enter: `http://localhost:7777` → **Connect**
 
-1. Open [os.agno.com](https://os.agno.com) and sign in
-2. Click **"Add new OS"** in the top navigation
-3. Select **"Local"** to connect to your local AgentOS
-4. Enter your endpoint URL: `http://localhost:7777`
-5. Click **"Connect"**
+---
 
-Once connected, you can:
-- Chat with your Agents/Teams/Workflows
-- View session history and memory
-- Manage knowledge bases
-- Monitor metrics and traces
+## Core Philosophy
 
-## Development Flow
+1. **AgentOS First** — Use AgentOS standard APIs, never write FastAPI routes manually
+2. **Single Agent Preferred** — 90% of cases can be solved with one Agent + Tools
+3. **Config over Code** — Model parameters use `ModelConfig`, no hardcoding
 
-Philosophy: **Choose Architecture → Create Directory → Use Components → Deploy**
-
-```
-Step 1: Choose Orchestration Mode
-        Choose Agent / Team / Workflow based on your use case.
-
-            ↓
-
-Step 2: Create Directory
-        Create an independent directory under the corresponding module.
-
-            ↓
-
-Step 3: Reuse or Extend Components
-        Use built-in Models/Tools/Hooks or develop custom ones.
-
-            ↓
-
-Step 4: Register and Go Live
-        Register in __init__.py and serve via AgentOS.
-```
-
-**Example: Developing "Customer Research"**
-1. Requires collaboration between researcher and writer → Choose **Team** mode.
-2. Create `app/teams/customer_research/` directory.
-3. Reuse `ModelConfig` from `app/models/`.
-4. Register in `app/teams/__init__.py`, and `/teams/customer-research/runs` API is auto-exposed.
+---
 
 ## Architecture
 
@@ -107,107 +84,95 @@ Step 4: Register and Go Live
 │                        AgentOS Runtime                          │
 ├─────────────────────────────────────────────────────────────────┤
 │   Agents          │     Teams           │     Workflows         │
-│   Single Agent    │     Multi-Agent     │     Step-based Flow   │
+│   Single task     │     Multi-agent     │     Step-based flow   │
 ├─────────────────────────────────────────────────────────────────┤
-│                      Abstraction Layers                         │
-│   Models     │   Tools      │   Hooks      │   Knowledge        │
-│   8 Providers │   3-tier Reg │   Guardrails │   RAG Support      │
+│                      Core Abstractions                          │
+│   Models     │   Tools      │   Hooks      │   Registry         │
+│   Unified    │   3-tier Reg │   Guardrails │   PriorityRegistry │
 ├─────────────────────────────────────────────────────────────────┤
 │                      Infrastructure                             │
 │              PostgreSQL + pgvector + Tracing                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## Classic Templates
+
+| Template             | Type     | Description            | Key Features                  |
+| -------------------- | -------- | ---------------------- | ----------------------------- |
+| **GitHub Analyzer**  | Agent    | Analyze GitHub repos   | Structured Output, DuckDuckGo |
+| **Deep Research**    | Team     | Multi-agent research   | session_state, ToolCallGuard  |
+| **Customer Service** | Workflow | Smart support with RAG | Condition routing, pgvector   |
+
+**Guides:**
+[Agents](app/agents/README_EN.md) · [Teams](app/teams/README_EN.md) · [Workflows](app/workflows/README_EN.md) · [Models](app/models/README_EN.md)
+
+---
+
 ## Project Structure
 
 ```
 agno-agent-starter/
 ├── app/
-│   ├── main.py              # AgentOS Entrypoint
-│   ├── config.py            # Global Config
-│   ├── agents/              # Agent Implementations
-│   ├── teams/               # Team Implementations
-│   ├── workflows/           # Workflow Implementations
-│   ├── models/              # Model Configurations
-│   ├── tools/               # Tool Registry
-│   └── hooks/               # Hooks/Guardrails
-├── tests/                   # Unit Tests
-├── .cursor/rules/           # Vibe Coding Rules
-├── docker-compose.yml       # Dev Environment
-├── docker-compose.prod.yml  # Prod Environment
-└── .env.example             # Environment Template
+│   ├── main.py              # AgentOS entrypoint
+│   ├── config.py            # 3-tier config loader
+│   ├── agents/              # ✏️ Agent implementations
+│   ├── teams/               # ✏️ Team implementations
+│   ├── workflows/           # ✏️ Workflow implementations
+│   ├── models/              # Model abstraction (8 providers)
+│   ├── tools/               # 3-tier tool registry
+│   ├── hooks/               # Guardrails & lifecycle hooks
+│   └── core/                # Registry abstractions
+├── api/                     # OpenAPI spec (auto-generated)
+├── tests/                   # Unit tests
+└── .cursor/rules/           # Vibe Coding rules
 ```
+
+*✏️ = User extension points*
+
+---
 
 ## Orchestration Modes
 
-| Mode         | Use Case                    | Description                                      |
-| ------------ | --------------------------- | ------------------------------------------------ |
-| **Agent**    | Single task + Tool call     | Recommended for 90% of cases, simple & efficient |
-| **Team**     | Multi-role collaboration    | Automatic coordination among members             |
-| **Workflow** | Strict steps + Conditionals | Process control and state management             |
+| Mode         | Use Case                  | Description                         |
+| ------------ | ------------------------- | ----------------------------------- |
+| **Agent**    | Single task + Tools       | 90% recommended, simple & efficient |
+| **Team**     | Multi-role collaboration  | Auto-coordination between members   |
+| **Workflow** | Strict steps + Conditions | Process control & state management  |
 
-## Classic Templates
-
-This project includes 3 production-ready templates demonstrating Agno best practices:
-
-| Template             | Type     | Description                        | Key Features                                   |
-| -------------------- | -------- | ---------------------------------- | ---------------------------------------------- |
-| **GitHub Analyzer**  | Agent    | Analyze GitHub repositories        | Structured Output, DuckDuckGoTools             |
-| **Deep Research**    | Team     | Multi-agent collaborative research | session_state, ToolCallGuard, 4-agent workflow |
-| **Customer Service** | Workflow | Smart customer support with RAG    | Condition routing, PgVector hybrid search      |
-
-### GitHub Analyzer Agent
-
-```python
-from app.agents.github_analyzer import create_github_analyzer_agent
-
-agent = create_github_analyzer_agent(db)
-response = agent.run("Analyze https://github.com/agno-agi/agno")
-# Returns: GitHubRepoAnalysis (structured output)
-```
-
-### Deep Research Team
-
-```python
-from app.teams.deep_research import create_deep_research_team
-
-team = create_deep_research_team(db)
-response = team.run("Research AI Agent framework trends")
-# Returns: ResearchReport with findings, sources, recommendations
-```
-
-### Customer Service Workflow
-
-```python
-from app.workflows.customer_service import create_customer_service_workflow
-
-workflow = create_customer_service_workflow(db)
-response = workflow.run("How do I view my billing?")
-# Returns: ServiceResponse with answer, category, sources
-```
-
-Detailed development guides:
-- [Agents Guide](app/agents/README_EN.md)
-- [Teams Guide](app/teams/README_EN.md)
-- [Workflows Guide](app/workflows/README_EN.md)
-- [Models Guide](app/models/README_EN.md)
+---
 
 ## Environment Variables
 
-| Variable             | Required | Description                                        |
-| -------------------- | -------- | -------------------------------------------------- |
-| `OPENROUTER_API_KEY` | Yes      | OpenRouter API Key                                 |
-| `DATABASE_URL`       | No       | PostgreSQL connection (Default provided by Docker) |
-| `DEBUG_MODE`         | No       | Dev mode with Hot Reload                           |
+| Variable             | Required | Description                      |
+| -------------------- | -------- | -------------------------------- |
+| `OPENROUTER_API_KEY` | Yes      | OpenRouter API Key               |
+| `DATABASE_URL`       | No       | PostgreSQL (default from Docker) |
+| `DEBUG_MODE`         | No       | Hot reload for dev               |
 
-Full configuration: [.env.example](.env.example)
+Full config: [.env.example](.env.example)
 
-## Testing
+---
+
+## API Reference
+
+- **Interactive Docs**: http://localhost:7777/docs
+- **OpenAPI Spec**: [api/openapi.json](api/openapi.json)
 
 ```bash
-pytest tests/ -v
+# Export latest spec
+python scripts/export_openapi.py
 ```
+
+---
+
+## Contributing
+
+Issues and PRs are welcome! Please read [AGENTS.md](AGENTS.md) for development guidelines.
+
+---
 
 ## License
 
-MIT
+[MIT](LICENSE)
