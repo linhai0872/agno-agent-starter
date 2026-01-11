@@ -143,3 +143,11 @@ docs/
 OPENCODE_INSIGHTS.md
 model-layer-optimization.md
 example_application_dsl/
+
+
+# Node.js (create-agno-agent installer)
+
+node_modules/
+packages/*/dist/
+packages/*/node_modules/
+package-lock.json

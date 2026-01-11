@@ -1,0 +1,50 @@
+{
+    "name": "create-agno-agent",
+    "version": "0.1.0",
+    "description": "Create a new Agno Agent project with a single command",
+    "type": "module",
+    "bin": {
+        "create-agno-agent": "./dist/index.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup src/index.ts --format esm --dts",
+        "dev": "tsup src/index.ts --format esm --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "agno",
+        "agent",
+        "ai",
+        "cli",
+        "starter",
+        "template"
+    ],
+    "author": "Linhai",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/linhai0872/agno-agent-starter.git"
+    },
+    "homepage": "https://github.com/linhai0872/agno-agent-starter#readme",
+    "dependencies": {
+        "@clack/prompts": "^0.11.0",
+        "degit": "^2.8.4",
+        "mri": "^1.2.0",
+        "picocolors": "^1.1.1"
+    },
+    "devDependencies": {
+        "@types/mri": "^1.1.4",
+        "@types/node": "^20.17.0",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.0",
+        "vitest": "^3.1.0"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}
