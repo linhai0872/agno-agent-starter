@@ -144,6 +144,11 @@ OPENCODE_INSIGHTS.md
 model-layer-optimization.md
 example_application_dsl/
 
+# 业务专属代码 (不提交 GitHub)
+app/tools/builtin/lead_batch_process/
+app/tools/mcp/brightdata.py
+app/workflows/lead_batch_process/
+
 
 # Node.js (create-agno-agent installer)
 

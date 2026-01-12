@@ -1,6 +1,6 @@
 # Hooks 开发指南
 
-三层护栏系统，支持内容安全、PII 过滤、输出验证、工具调用防护。
+三层护栏系统，支持内容安全、PII 过滤、输出验证、执行防护。
 
 ## 目录结构
 
@@ -10,20 +10,27 @@ hooks/
 ├── config.py         # 配置定义
 ├── registry.py       # 三层注册表
 └── builtin/          # 内置护栏
-    ├── content_safety.py    # 内容安全
-    ├── pii_filter.py        # PII 过滤
-    ├── output_validator.py  # 输出验证
-    └── tool_call_guard.py   # 工具调用防护 (防止无限循环)
+    ├── content_safety.py       # 内容安全
+    ├── pii_filter.py           # PII 过滤
+    ├── output_validator.py     # 输出验证
+    ├── tool_call_guard.py      # 工具调用防护 (tool_hooks)
+    ├── llm_invocation_guard.py # LLM 调用防护 (post_hooks)
+    └── token_budget_guard.py   # Token 预算防护 (post_hooks)
 ```
 
 ## 内置护栏
 
-### 工具调用防护 (推荐)
+### 工具调用防护 (推荐) - V2
 
 防止 Agent 工具调用无限循环，基于 Agno 官方 `RetryAgentRun` + `StopAgentRun` 机制。
 
+**V2 架构亮点**:
+- 使用 Agno 原生 `run_context.session_state` 存储计数器
+- 天然请求级别隔离，无跨请求状态累积
+- 完全兼容 Agno `tool_hooks` 接口
+
 ```python
-from app.hooks.builtin.tool_call_guard import create_tool_call_guard
+from app.hooks.builtin import create_tool_call_guard
 
 # 创建防护器
 guard = create_tool_call_guard(
@@ -39,15 +46,123 @@ agent = Agent(
 )
 ```
 
-预配置实例：
+**为什么需要 ToolCallGuard？**
+
+Agno 官方的 `tool_call_limit` 只能限制总调用次数，无法:
+- 限制单个工具的调用次数（防止对某工具死循环）
+- 提供软警告机制（让 LLM 知道应该换工具）
+- 分层升级（先警告，多次后强制停止）
+
+**工厂函数**：
 
 ```python
-from app.hooks.builtin.tool_call_guard import default_guard, strict_guard, relaxed_guard
+from app.hooks.builtin import get_default_tool_guard, get_strict_tool_guard, get_relaxed_tool_guard
 
-# default_guard: 标准配置 (max_calls=5, max_retries=3, max_total=30)
-# strict_guard:  严格配置 (max_calls=3, max_retries=2, max_total=15)
-# relaxed_guard: 宽松配置 (max_calls=10, max_retries=5, max_total=50)
+# get_default_tool_guard(): 标准配置 (max_calls=5, max_retries=3, max_total=30)
+# get_strict_tool_guard():  严格配置 (max_calls=3, max_retries=2, max_total=15)
+# get_relaxed_tool_guard(): 宽松配置 (max_calls=10, max_retries=5, max_total=50)
 ```
+
+### LLM 调用防护 - V2 (post_hooks)
+
+防止 Agent LLM 调用无限循环，基于 Agno `post_hooks` 机制。
+
+**V2 架构亮点**:
+- 使用 Agno 原生 `run_context.session_state` 存储计数器
+- 天然请求级别隔离，无跨请求状态累积
+- 完全兼容 Agno `post_hooks` 接口
+
+```python
+from app.hooks.builtin.llm_invocation_guard import create_llm_invocation_guard
+
+# 创建防护器
+guard = create_llm_invocation_guard(
+    max_invocations=50,   # LLM 最大调用次数
+    warn_threshold=0.8,   # 警告阈值 (80%时开始警告)
+)
+
+# 应用到 Agent
+agent = Agent(
+    model=model,
+    post_hooks=[guard],  # 添加为 post_hook
+)
+```
+
+**工厂函数**：
+
+```python
+from app.hooks.builtin import get_default_llm_guard, get_strict_llm_guard, get_relaxed_llm_guard
+
+# get_default_llm_guard(): 标准配置 (max=50, warn=0.8)
+# get_strict_llm_guard():  严格配置 (max=20, warn=0.7)
+# get_relaxed_llm_guard(): 宽松配置 (max=100, warn=0.9)
+```
+
+### Token 预算防护 - V2 (post_hooks)
+
+防止 Agent Token 使用超出预算，基于 Agno `post_hooks` 机制。
+
+**V2 架构亮点**:
+- 使用 Agno 原生 `run_context.session_state` 存储累计 Token
+- 天然请求级别隔离，无跨请求状态累积
+- 自动从 `run_output` 提取 token 使用量
+
+```python
+from app.hooks.builtin.token_budget_guard import create_token_budget_guard
+
+# 创建防护器
+guard = create_token_budget_guard(
+    max_tokens=100000,    # Token 预算上限
+    warn_threshold=0.8,   # 警告阈值 (80%时开始警告)
+)
+
+# 应用到 Agent
+agent = Agent(
+    model=model,
+    post_hooks=[guard],  # 添加为 post_hook
+)
+```
+
+**工厂函数**：
+
+```python
+from app.hooks.builtin import get_default_token_guard, get_strict_token_guard, get_relaxed_token_guard
+
+# get_default_token_guard(): 标准配置 (max=100000, warn=0.8)
+# get_strict_token_guard():  严格配置 (max=30000, warn=0.7)
+# get_relaxed_token_guard(): 宽松配置 (max=500000, warn=0.9)
+```
+
+### 执行防护组合使用
+
+推荐在复杂 Agent 中同时使用多种防护：
+
+```python
+from app.hooks.builtin import (
+    create_tool_call_guard,
+    create_llm_invocation_guard,
+    create_token_budget_guard,
+)
+
+agent = Agent(
+    model=model,
+    tools=[...],
+    # 工具调用防护 (tool_hooks)
+    tool_hooks=[
+        create_tool_call_guard(max_calls_per_tool=5, max_total_calls=30),
+    ],
+    # LLM 调用 + Token 预算防护 (post_hooks)
+    post_hooks=[
+        create_llm_invocation_guard(max_invocations=50),
+        create_token_budget_guard(max_tokens=100000),
+    ],
+)
+```
+
+**三层防护体系：**
+1. **ToolCallGuard** - 防止单工具死循环
+2. **LLMInvocationGuard** - 防止 LLM 无限推理
+3. **TokenBudgetGuard** - 控制成本上限
 
 ### 内容安全
 

@@ -1,7 +1,12 @@
 """
-工具调用防护 (Tool Call Guard)
+工具调用防护 (Tool Call Guard) - V2
 
-基于 Agno 框架官方最佳实践的多层防护机制，用于防止 Agent 工具调用无限循环。
+基于 Agno 框架最佳实践的多层防护机制，用于防止 Agent 工具调用无限循环。
+
+V2 重构亮点:
+- 使用 Agno 原生 run_context.session_state 存储计数器
+- 天然请求级别隔离，无跨请求状态累积问题
+- 完全兼容 Agno tool_hooks 接口
 
 机制说明:
 - 软限制 (RetryAgentRun): 单工具调用过多时，跳过该工具并反馈给模型，Agent 继续运行
@@ -10,10 +15,10 @@
 使用示例:
 
 ```python
-from app.hooks.builtin.tool_call_guard import ToolCallGuard
+from app.hooks.builtin.tool_call_guard import create_tool_call_guard
 
 # 创建防护器实例
-guard = ToolCallGuard(
+guard = create_tool_call_guard(
     max_calls_per_tool=5,  # 单工具最多调用 5 次
     max_retries_per_tool=3,  # 单工具最多触发 3 次 RetryAgentRun
     max_total_calls=30,  # 总工具调用上限
@@ -38,8 +43,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from agno.exceptions import RetryAgentRun, StopAgentRun
+from agno.run import RunContext
 
 logger = logging.getLogger(__name__)
+
+# run_context.session_state 中存储计数器的键名前缀
+_GUARD_STATE_PREFIX = "_tool_call_guard"
 
 
 @dataclass
@@ -55,19 +64,11 @@ class ToolCallGuardConfig:
         stop_message_template: StopAgentRun 消息模板
     """
 
-    # 单工具调用上限（软限制）
     max_calls_per_tool: int = 5
-
-    # 单工具 retry 上限（升级为硬限制）
     max_retries_per_tool: int = 3
-
-    # 总调用上限（硬限制）
     max_total_calls: int = 30
-
-    # 是否启用
     enabled: bool = True
 
-    # 自定义消息模板
     retry_message_template: str = (
         "⚠️ 工具 {tool_name} 已调用 {call_count} 次，超过单工具限制 ({limit})。\n"
         "请执行以下操作之一：\n"
@@ -81,7 +82,10 @@ class ToolCallGuardConfig:
 
 class ToolCallGuard:
     """
-    工具调用防护器
+    工具调用防护器 (V2 - 请求级别隔离)
+
+    使用 Agno 原生 run_context.session_state 存储计数器，
+    实现请求级别隔离，无需额外配置即可解决跨请求状态累积问题。
 
     实现 Agno tool_hooks 接口，提供多层防护：
 
@@ -135,44 +139,67 @@ class ToolCallGuard:
                 enabled=enabled,
             )
 
-        # 计数器
-        self._call_counter: dict[str, int] = {}
-        self._retry_counter: dict[str, int] = {}
+        # 唯一标识，用于在 session_state 中隔离不同 Guard 实例的计数器
+        self._guard_id = f"{_GUARD_STATE_PREFIX}_{id(self)}"
 
-    def reset(self) -> None:
+    def _get_state(self, run_context: RunContext) -> dict[str, dict[str, int]]:
         """
-        重置计数器
+        获取当前请求的计数器状态
 
-        在每次 Agent run 开始时调用，清空所有计数。
-        注意：Agno 框架会为每个 Agent run 创建新的 hook 实例，
-        因此通常不需要手动调用此方法。
+        使用 run_context.session_state 存储，天然请求隔离。
+
+        Args:
+            run_context: Agno 运行上下文
+
+        Returns:
+            包含 call_counter 和 retry_counter 的字典
         """
-        self._call_counter.clear()
-        self._retry_counter.clear()
-        logger.debug("ToolCallGuard counters reset")
+        if run_context.session_state is None:
+            run_context.session_state = {}
 
-    @property
-    def call_counts(self) -> dict[str, int]:
-        """获取当前工具调用计数（只读）"""
-        return dict(self._call_counter)
+        if self._guard_id not in run_context.session_state:
+            run_context.session_state[self._guard_id] = {
+                "call_counter": {},
+                "retry_counter": {},
+            }
 
-    @property
-    def total_calls(self) -> int:
-        """获取总调用次数"""
-        return sum(self._call_counter.values())
+        return run_context.session_state[self._guard_id]
+
+    def get_call_counts(self, run_context: RunContext) -> dict[str, int]:
+        """获取当前请求的工具调用计数"""
+        state = self._get_state(run_context)
+        return dict(state["call_counter"])
+
+    def get_total_calls(self, run_context: RunContext) -> int:
+        """获取当前请求的总调用次数"""
+        state = self._get_state(run_context)
+        return sum(state["call_counter"].values())
+
+    def reset(self, run_context: RunContext) -> None:
+        """
+        重置当前请求的计数器
+
+        通常不需要手动调用，因为每个请求有独立的 session_state。
+        仅在特殊场景（如同一请求内多次 Agent 调用）使用。
+        """
+        if run_context.session_state and self._guard_id in run_context.session_state:
+            del run_context.session_state[self._guard_id]
+        logger.debug("ToolCallGuard counters reset for guard_id=%s", self._guard_id)
 
     def __call__(
         self,
+        run_context: RunContext,
         function_name: str,
         function_call: Callable[..., Any],
         arguments: dict[str, Any],
     ) -> Any:
         """
-        tool_hooks 接口实现
+        tool_hooks 接口实现 (V2 - 支持 run_context)
 
         每次工具调用时由 Agno 框架调用此方法。
 
         Args:
+            run_context: Agno 运行上下文（包含 session_state）
             function_name: 工具函数名称
             function_call: 工具函数引用
             arguments: 调用参数
@@ -187,16 +214,22 @@ class ToolCallGuard:
         if not self.config.enabled:
             return function_call(**arguments)
 
+        # 获取当前请求的计数器状态
+        state = self._get_state(run_context)
+        call_counter = state["call_counter"]
+        retry_counter = state["retry_counter"]
+
         # 更新调用计数
-        self._call_counter[function_name] = self._call_counter.get(function_name, 0) + 1
-        current_count = self._call_counter[function_name]
-        total = self.total_calls
+        call_counter[function_name] = call_counter.get(function_name, 0) + 1
+        current_count = call_counter[function_name]
+        total = sum(call_counter.values())
 
         logger.debug(
-            "ToolCallGuard: %s (count=%d, total=%d)",
+            "ToolCallGuard: %s (count=%d, total=%d, guard=%s)",
             function_name,
             current_count,
             total,
+            self._guard_id,
         )
 
         # 硬限制 1: 总调用次数超限
@@ -207,8 +240,8 @@ class ToolCallGuard:
 
         # 软限制: 单工具调用过多
         if current_count > self.config.max_calls_per_tool:
-            self._retry_counter[function_name] = self._retry_counter.get(function_name, 0) + 1
-            retry_count = self._retry_counter[function_name]
+            retry_counter[function_name] = retry_counter.get(function_name, 0) + 1
+            retry_count = retry_counter[function_name]
 
             # 硬限制 2: 重试次数过多（模型未学会）
             if retry_count > self.config.max_retries_per_tool:
@@ -239,47 +272,7 @@ class ToolCallGuard:
         return function_call(**arguments)
 
 
-# ============== 预配置实例（懒加载）==============
-
-_default_guard: ToolCallGuard | None = None
-_strict_guard: ToolCallGuard | None = None
-_relaxed_guard: ToolCallGuard | None = None
-
-
-def get_default_guard() -> ToolCallGuard:
-    """获取默认配置的防护器实例（懒加载）"""
-    global _default_guard
-    if _default_guard is None:
-        _default_guard = ToolCallGuard(
-            max_calls_per_tool=5,
-            max_retries_per_tool=3,
-            max_total_calls=30,
-        )
-    return _default_guard
-
-
-def get_strict_guard() -> ToolCallGuard:
-    """获取严格配置的防护器实例（懒加载，适用于成本敏感场景）"""
-    global _strict_guard
-    if _strict_guard is None:
-        _strict_guard = ToolCallGuard(
-            max_calls_per_tool=3,
-            max_retries_per_tool=2,
-            max_total_calls=15,
-        )
-    return _strict_guard
-
-
-def get_relaxed_guard() -> ToolCallGuard:
-    """获取宽松配置的防护器实例（懒加载，适用于复杂任务）"""
-    global _relaxed_guard
-    if _relaxed_guard is None:
-        _relaxed_guard = ToolCallGuard(
-            max_calls_per_tool=10,
-            max_retries_per_tool=5,
-            max_total_calls=50,
-        )
-    return _relaxed_guard
+# ============== 工厂函数 ==============
 
 
 def create_tool_call_guard(
@@ -291,6 +284,9 @@ def create_tool_call_guard(
     创建工具调用防护器实例
 
     工厂函数，用于为每个 Agent 创建独立的防护器实例。
+
+    注意：V2 版本使用 run_context.session_state 存储计数器，
+    即使多个 Agent 共享同一个 Guard 实例，每个请求的计数器也是隔离的。
 
     Args:
         max_calls_per_tool: 单工具最大调用次数
@@ -316,3 +312,51 @@ def create_tool_call_guard(
         max_retries_per_tool=max_retries_per_tool,
         max_total_calls=max_total_calls,
     )
+
+
+# ============== 预配置工厂（推荐使用工厂函数而非单例）==============
+
+
+def get_default_guard() -> ToolCallGuard:
+    """
+    获取默认配置的防护器实例
+
+    注意：返回新实例，非单例。V2 版本中即使共享实例也是请求隔离的。
+    """
+    return ToolCallGuard(
+        max_calls_per_tool=5,
+        max_retries_per_tool=3,
+        max_total_calls=30,
+    )
+
+
+def get_strict_guard() -> ToolCallGuard:
+    """
+    获取严格配置的防护器实例（适用于成本敏感场景）
+    """
+    return ToolCallGuard(
+        max_calls_per_tool=3,
+        max_retries_per_tool=2,
+        max_total_calls=15,
+    )
+
+
+def get_relaxed_guard() -> ToolCallGuard:
+    """
+    获取宽松配置的防护器实例（适用于复杂任务）
+    """
+    return ToolCallGuard(
+        max_calls_per_tool=10,
+        max_retries_per_tool=5,
+        max_total_calls=50,
+    )
+
+
+__all__ = [
+    "ToolCallGuard",
+    "ToolCallGuardConfig",
+    "create_tool_call_guard",
+    "get_default_guard",
+    "get_strict_guard",
+    "get_relaxed_guard",
+]

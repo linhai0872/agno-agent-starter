@@ -94,33 +94,27 @@ model = create_model(config, project)
 
 ## 支持厂商
 
-| Provider | 说明 |
-|----------|------|
-| OPENROUTER | 统一网关，100+ 模型 |
-| OPENAI | GPT-4o, o1/o3 系列 |
-| GOOGLE | Gemini 2.5 系列 |
-| ANTHROPIC | Claude Sonnet 4, Opus 4 |
-| DASHSCOPE | Qwen 系列 |
-| VOLCENGINE | 豆包 Seed, DeepSeek |
-| OLLAMA | 本地部署 |
-| LITELLM | 统一网关 |
+| Provider   | 说明                    |
+| ---------- | ----------------------- |
+| OPENROUTER | 统一网关，100+ 模型     |
+| OPENAI     | GPT-4o, o1/o3 系列      |
+| GOOGLE     | Gemini 2.5 系列         |
+| ANTHROPIC  | Claude Sonnet 4, Opus 4 |
+| DASHSCOPE  | Qwen 系列               |
+| VOLCENGINE | 豆包 Seed, DeepSeek     |
+| OLLAMA     | 本地部署                |
+| LITELLM    | 统一网关                |
 
-## 迭代防护模型
+## 执行防护
 
-防止 Agent 工具调用时 LLM 无限循环：
+> ⚠️ **已迁移**: 执行防护功能已迁移到 `app/hooks/builtin/` 模块。
 
-```python
-from app.models import GuardedOpenRouter
+请使用以下替代方案:
 
-# 创建带迭代防护的模型
-model = GuardedOpenRouter(
-    id="google/gemini-2.5-flash-preview-05-20",
-    max_iterations=50,  # LLM 最多调用 50 次，超过后抛出 StopAgentRun
-)
+| 旧模块              | 新模块               | 说明                   |
+| ------------------- | -------------------- | ---------------------- |
+| `GuardedOpenRouter` | `LLMInvocationGuard` | 使用 `post_hooks` 实现 |
+| -                   | `TokenBudgetGuard`   | Token 预算控制         |
+| -                   | `ToolCallGuard`      | 使用 `tool_hooks` 实现 |
 
-agent = Agent(model=model, tools=[...])
-```
-
-适用场景：有工具调用的 Agent 节点（如 EntityVerificationAgent、ContactDiscoveryAgent）。
-
-
+详见 [`app/hooks/README.md`](../hooks/README.md)。
