@@ -62,8 +62,8 @@ pgvector>=0.2.0
 # 搜索工具 (Tavily - Agno 原生支持)
 tavily-python>=0.5.0
 
-# 搜索工具 (DuckDuckGo - 无需 API Key)
-duckduckgo-search>=7.0.0
+# 搜索工具 (DuckDuckGo - Agno 依赖 ddgs)
+ddgs>=7.0.0
 
 # ===========================================
 # Tracing / Observability
