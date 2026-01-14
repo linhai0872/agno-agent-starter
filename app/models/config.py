@@ -530,6 +530,11 @@ class ModelConfig:
     # 最大工具调用次数 (Agno Agent 参数)
     tool_call_limit: int = 20
 
+    # 启用并行工具调用
+    # 允许 LLM 在一次响应中请求多个工具调用，框架会并行执行
+    # 注意：需要模型支持，OpenAI 系列模型默认支持，Gemini 通过 OpenRouter 需要显式启用
+    parallel_tool_calls: bool = True
+
     # ============== 调试 ==============
 
     # 调试模式
@@ -606,6 +611,11 @@ class ModelConfig:
             elif self.reasoning.effort != "none":
                 # 其他模型使用 effort
                 params["reasoning_effort"] = self.reasoning.effort
+
+        # 并行工具调用 - 通过 request_params 传递给 OpenAI API
+        # 允许 LLM 在一次响应中请求多个工具调用，框架会并行执行
+        if self.parallel_tool_calls:
+            params["request_params"] = {"parallel_tool_calls": True}
 
         return params
 
