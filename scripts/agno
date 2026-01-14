@@ -1,0 +1,527 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════════════════════
+# Agno CLI - 通用 Agent/Team/Workflow 测试与调试工具
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 用法:
+#   ./scripts/agno run <type> <id> '<message>' [options]
+#   ./scripts/agno trace <session_id> [options]
+#   ./scripts/agno list [type]
+#   ./scripts/agno sessions [type] [id] [limit]
+#
+# 示例:
+#   ./scripts/agno run workflow customer-service '{"query":"How to reset password?"}'
+#   ./scripts/agno run agent github-analyzer '{"repo":"owner/repo"}'
+#   ./scripts/agno run team deep-research-team '{"query":"AI trends"}'
+#   ./scripts/agno trace abc123-session-id
+#   ./scripts/agno list
+#   ./scripts/agno sessions workflow customer-service 5
+#
+# 环境变量:
+#   AGNO_PORT          - API 端口 (默认: 7777)
+#   AGNO_DB_CONTAINER  - PostgreSQL 容器名 (默认: agno-postgres)
+#   AGNO_DB_USER       - 数据库用户 (默认: ai)
+#   AGNO_DB_NAME       - 数据库名 (默认: ai)
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+set -e
+
+# 配置
+PORT="${AGNO_PORT:-7777}"
+DB_CONTAINER="${AGNO_DB_CONTAINER:-agno-postgres}"
+DB_USER="${AGNO_DB_USER:-ai}"
+DB_NAME="${AGNO_DB_NAME:-ai}"
+BASE_URL="http://127.0.0.1:${PORT}"
+
+# 颜色
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# 帮助信息
+show_help() {
+    echo "Agno CLI - 通用 Agent/Team/Workflow 测试与调试工具"
+    echo ""
+    echo "用法:"
+    echo "  agno run <type> <id> '<message>' [--stream]    运行应用"
+    echo "  agno trace <session_id> [--full|--metrics|--steps|--content|--usage]"
+    echo "  agno list [type]                               列出已注册的应用"
+    echo "  agno sessions [type] [id] [limit]              查看 session 历史"
+    echo "  agno errors [--limit N]                        查看失败的 runs"
+    echo "  agno health                                    系统健康检查"
+    echo ""
+    echo "类型 (type):"
+    echo "  agent    - 单 Agent 应用"
+    echo "  team     - 多 Agent 协作"
+    echo "  workflow - 工作流 (Sequential Chain)"
+    echo ""
+    echo "示例:"
+    echo "  agno run workflow customer-service '{\"query\":\"help\"}'"
+    echo "  agno trace abc123-session-id --metrics"
+    echo "  agno list workflow"
+    echo "  agno errors --limit 5"
+    echo "  agno health"
+    echo "  agno sessions workflow customer-service 5"
+}
+
+# 检查依赖
+check_deps() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}❌ 需要安装 jq${NC}"
+        exit 1
+    fi
+    if ! command -v curl &> /dev/null; then
+        echo -e "${RED}❌ 需要安装 curl${NC}"
+        exit 1
+    fi
+}
+
+# 列出应用
+cmd_list() {
+    local type="${1:-all}"
+    
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}📋 已注册的应用 (端口: $PORT)${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    if [ "$type" = "all" ] || [ "$type" = "agent" ] || [ "$type" = "agents" ]; then
+        echo -e "${BLUE}🤖 Agents:${NC}"
+        curl -4 -s "${BASE_URL}/agents" | jq -r '.[] | "   - \(.id): \(.name // "N/A")"' 2>/dev/null || echo "   (无法获取)"
+        echo ""
+    fi
+    
+    if [ "$type" = "all" ] || [ "$type" = "team" ] || [ "$type" = "teams" ]; then
+        echo -e "${BLUE}👥 Teams:${NC}"
+        curl -4 -s "${BASE_URL}/teams" | jq -r '.[] | "   - \(.id): \(.name // "N/A")"' 2>/dev/null || echo "   (无法获取)"
+        echo ""
+    fi
+    
+    if [ "$type" = "all" ] || [ "$type" = "workflow" ] || [ "$type" = "workflows" ]; then
+        echo -e "${BLUE}🔄 Workflows:${NC}"
+        curl -4 -s "${BASE_URL}/workflows" | jq -r '.[] | "   - \(.id): \(.name // "N/A")"' 2>/dev/null || echo "   (无法获取)"
+        echo ""
+    fi
+}
+
+# 运行应用
+cmd_run() {
+    local type="$1"
+    local id="$2"
+    local message="$3"
+    local stream="${4:-false}"
+    
+    if [ -z "$type" ] || [ -z "$id" ] || [ -z "$message" ]; then
+        echo -e "${RED}❌ 用法: agno run <type> <id> '<message>' [--stream]${NC}"
+        echo "   type: agent | team | workflow"
+        exit 1
+    fi
+    
+    # 处理 --stream 参数
+    if [ "$stream" = "--stream" ]; then
+        stream="true"
+    else
+        stream="false"
+    fi
+    
+    # 规范化 type
+    case "$type" in
+        agent|agents) type="agents" ;;
+        team|teams) type="teams" ;;
+        workflow|workflows) type="workflows" ;;
+        *)
+            echo -e "${RED}❌ 未知类型: $type (支持: agent, team, workflow)${NC}"
+            exit 1
+            ;;
+    esac
+    
+    local endpoint="${BASE_URL}/${type}/${id}/runs"
+    
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}🚀 运行 ${type}/${id}${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}📝 输入:${NC} $message"
+    echo -e "${BLUE}🔌 端点:${NC} $endpoint"
+    echo -e "${BLUE}📡 流式:${NC} $stream"
+    echo ""
+    
+    echo -e "${YELLOW}⏳ 执行中...${NC}"
+    
+    local response
+    response=$(curl -4 -s -X POST "$endpoint" \
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode "message=${message}" \
+        --data-urlencode "stream=${stream}" 2>&1)
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ curl 请求失败${NC}"
+        echo "$response"
+        exit 1
+    fi
+    
+    # 提取 session_id
+    local session_id
+    session_id=$(echo "$response" | jq -r '.session_id // empty' 2>/dev/null)
+    
+    if [ -z "$session_id" ]; then
+        echo -e "${RED}❌ 执行失败或无法解析 session_id${NC}"
+        echo ""
+        echo "原始响应:"
+        echo "$response" | jq . 2>/dev/null || echo "$response"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ 执行完成${NC}"
+    echo -e "${BLUE}📋 Session ID:${NC} $session_id"
+    echo ""
+    
+    # 自动查询 Trace
+    cmd_trace "$session_id" "--summary"
+    
+    echo ""
+    echo -e "${CYAN}💡 更多查询:${NC}"
+    echo "   agno trace $session_id --full     # 完整信息"
+    echo "   agno trace $session_id --metrics  # 执行指标"
+    echo "   agno trace $session_id --steps    # 节点结果"
+    echo "   agno trace $session_id --content  # 最终输出"
+    echo "   agno trace $session_id --usage    # 工具成本统计"
+}
+
+# 查询 Trace
+cmd_trace() {
+    local session_id="$1"
+    local mode="${2:---summary}"
+    
+    if [ -z "$session_id" ]; then
+        echo -e "${RED}❌ 用法: agno trace <session_id> [--full|--metrics|--steps|--content|--usage|--summary]${NC}"
+        exit 1
+    fi
+    
+    # 获取 runs 数据
+    local runs_json
+    runs_json=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -c \
+        "SELECT runs FROM ai.agno_sessions WHERE session_id = '$session_id';" 2>/dev/null)
+    
+    if [ -z "$runs_json" ] || [ "$runs_json" = " " ]; then
+        echo -e "${RED}❌ 未找到 session: $session_id${NC}"
+        exit 1
+    fi
+    
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}📊 Trace: $session_id${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    
+    case "$mode" in
+        --full)
+            echo ""
+            echo -e "${BLUE}🔹 完整 runs 数据:${NC}"
+            echo "$runs_json" | jq '.[0]'
+            ;;
+        --metrics)
+            echo ""
+            echo -e "${BLUE}🔹 执行指标:${NC}"
+            echo "$runs_json" | jq '.[0].metrics'
+            ;;
+        --steps)
+            echo ""
+            echo -e "${BLUE}🔹 节点结果:${NC}"
+            echo "$runs_json" | jq '.[0].step_results // .[0].messages // "N/A"'
+            ;;
+        --content)
+            echo ""
+            echo -e "${BLUE}🔹 最终输出:${NC}"
+            echo "$runs_json" | jq '.[0].content'
+            ;;
+        --usage)
+            echo ""
+            echo -e "${BLUE}🔹 工具成本统计 (FinOps):${NC}"
+            # 从 agno_spans 查询包含 __meta__ 或 AGNO_USAGE 的工具调用
+            # 注意：JSON 中的引号在 PostgreSQL 中存储为 \" (转义)
+            docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+                WITH tool_costs AS (
+                    SELECT 
+                        s.name as tool_name,
+                        CASE 
+                            WHEN s.attributes::text LIKE '%status%billed%' THEN 'billed'
+                            WHEN s.attributes::text LIKE '%status%free%' THEN 'free'
+                            ELSE 'unknown'
+                        END as status,
+                        COALESCE(
+                            (regexp_match(s.attributes::text, 'cost_usd[^0-9]*([0-9.]+)'))[1]::numeric,
+                            0
+                        ) as cost_usd
+                    FROM ai.agno_spans s
+                    JOIN ai.agno_traces t ON s.trace_id = t.trace_id
+                    WHERE t.session_id = '$session_id'
+                      AND (s.attributes::text LIKE '%__meta__%' OR s.attributes::text LIKE '%AGNO_USAGE%')
+                      AND s.name NOT LIKE 'OpenRouter%'
+                )
+                SELECT 
+                    tool_name as \"Tool\",
+                    status as \"Status\",
+                    '\$' || ROUND(cost_usd, 4) as \"Cost\"
+                FROM tool_costs
+                UNION ALL
+                SELECT 
+                    '─────────────' as \"Tool\",
+                    '──────' as \"Status\",
+                    '────────' as \"Cost\"
+                UNION ALL
+                SELECT
+                    'TOTAL' as \"Tool\",
+                    '' as \"Status\",
+                    '\$' || ROUND(SUM(cost_usd), 4) as \"Cost\"
+                FROM tool_costs;
+            "
+            ;;
+        --summary|*)
+            echo ""
+            echo -e "${BLUE}🔹 状态:${NC}"
+            echo "$runs_json" | jq '.[0] | {status, workflow_name, agent_name, team_name, run_id, created_at} | with_entries(select(.value != null))'
+            
+            echo ""
+            echo -e "${BLUE}🔹 指标摘要:${NC}"
+            echo "$runs_json" | jq '.[0].metrics | if . then {duration, total_tokens: (.total_tokens // .input_tokens + .output_tokens // null), cost: (.cost // null)} | with_entries(select(.value != null)) else "N/A" end'
+            
+            echo ""
+            echo -e "${BLUE}🔹 节点摘要:${NC}"
+            echo "$runs_json" | jq '
+                if .[0].step_results then
+                    [.[0].step_results[] | {step: .step_name, status: .status}]
+                elif .[0].messages then
+                    "Agent: \(.[0].messages | length) messages"
+                else
+                    "N/A"
+                end
+            '
+            ;;
+    esac
+}
+
+# 查看 session 历史
+cmd_sessions() {
+    local type="${1:-all}"
+    local id="$2"
+    local limit="${3:-5}"
+    
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}📜 Session 历史${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    
+    local where_clause=""
+    
+    case "$type" in
+        agent|agents)
+            where_clause="WHERE agent_id IS NOT NULL"
+            [ -n "$id" ] && where_clause="WHERE agent_id = '$id'"
+            ;;
+        team|teams)
+            where_clause="WHERE team_id IS NOT NULL"
+            [ -n "$id" ] && where_clause="WHERE team_id = '$id'"
+            ;;
+        workflow|workflows)
+            where_clause="WHERE workflow_id IS NOT NULL"
+            [ -n "$id" ] && where_clause="WHERE workflow_id = '$id'"
+            ;;
+        all)
+            where_clause=""
+            ;;
+        *)
+            echo -e "${RED}❌ 未知类型: $type${NC}"
+            exit 1
+            ;;
+    esac
+    
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
+        "SELECT 
+            session_id,
+            COALESCE(agent_id, team_id, workflow_id) AS app_id,
+            session_type,
+            to_timestamp(created_at) AS created
+         FROM ai.agno_sessions
+         $where_clause
+         ORDER BY created_at DESC
+         LIMIT $limit;"
+}
+
+# 查看失败的 runs
+cmd_errors() {
+    local limit="10"
+    
+    # 解析参数
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --limit)
+                limit="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+    
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}❌ 最近失败的 Runs (limit: $limit)${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "
+        WITH failed_steps AS (
+            SELECT 
+                s.session_id,
+                COALESCE(s.workflow_id, s.agent_id, s.team_id) as app_id,
+                step_result->>'step_name' as step_name,
+                step_result->>'status' as status,
+                to_timestamp(s.created_at) as created_at
+            FROM ai.agno_sessions s,
+            jsonb_array_elements((s.runs->0->'step_results')::jsonb) as step_result
+            WHERE step_result->>'status' = 'failed'
+               OR step_result->>'success' = 'false'
+        )
+        SELECT 
+            LEFT(session_id::text, 36) as \"Session ID\",
+            COALESCE(app_id, 'N/A') as \"App\",
+            COALESCE(step_name, 'N/A') as \"Failed Step\",
+            to_char(created_at, 'YYYY-MM-DD HH24:MI') as \"Time\"
+        FROM failed_steps
+        ORDER BY created_at DESC
+        LIMIT $limit;
+    "
+    
+    echo ""
+    echo -e "${CYAN}💡 查看详情: agno trace <session_id> --steps${NC}"
+}
+
+# 系统健康检查
+cmd_health() {
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}🏥 系统健康检查${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    # 1. API 服务检查
+    echo -n -e "${BLUE}🔌 API 服务:${NC} "
+    if curl -4 -s --connect-timeout 3 "${BASE_URL}/health" > /dev/null 2>&1 || \
+       curl -4 -s --connect-timeout 3 "${BASE_URL}/agents" > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ 正常${NC} ($BASE_URL)"
+    else
+        echo -e "${RED}❌ 不可用${NC} ($BASE_URL)"
+    fi
+    
+    # 2. 数据库检查
+    echo -n -e "${BLUE}🗄️  数据库:${NC} "
+    if docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ 正常${NC} ($DB_CONTAINER)"
+    else
+        echo -e "${RED}❌ 不可用${NC} ($DB_CONTAINER)"
+    fi
+    
+    # 3. 最近 1 小时成功率
+    echo -n -e "${BLUE}📊 最近1小时成功率:${NC} "
+    local stats
+    stats=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -c "
+        WITH recent_runs AS (
+            SELECT 
+                s.session_id,
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM jsonb_array_elements((s.runs->0->'step_results')::jsonb) as sr
+                        WHERE sr->>'status' = 'failed' OR sr->>'success' = 'false'
+                    ) THEN 'failed'
+                    ELSE 'success'
+                END as run_status
+            FROM ai.agno_sessions s
+            WHERE s.created_at > EXTRACT(EPOCH FROM NOW() - INTERVAL '1 hour')
+        )
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE run_status = 'success') as success_count
+        FROM recent_runs;
+    " 2>/dev/null | tr -d ' ')
+    
+    if [ -n "$stats" ] && [ "$stats" != "|" ]; then
+        local total=$(echo "$stats" | cut -d'|' -f1)
+        local success=$(echo "$stats" | cut -d'|' -f2)
+        if [ "$total" -gt 0 ]; then
+            local rate=$(echo "scale=1; $success * 100 / $total" | bc)
+            if (( $(echo "$rate >= 90" | bc -l) )); then
+                echo -e "${GREEN}✅ ${rate}%${NC} ($success/$total)"
+            elif (( $(echo "$rate >= 70" | bc -l) )); then
+                echo -e "${YELLOW}⚠️  ${rate}%${NC} ($success/$total)"
+            else
+                echo -e "${RED}❌ ${rate}%${NC} ($success/$total)"
+            fi
+        else
+            echo -e "${YELLOW}⚠️  无数据${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  无数据${NC}"
+    fi
+    
+    # 4. 最近失败
+    echo -e "${BLUE}🔴 最近失败:${NC}"
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -c "
+        WITH failed_steps AS (
+            SELECT 
+                COALESCE(s.workflow_id, s.agent_id, s.team_id) as app_id,
+                step_result->>'step_name' as step_name,
+                to_timestamp(s.created_at) as created_at
+            FROM ai.agno_sessions s,
+            jsonb_array_elements((s.runs->0->'step_results')::jsonb) as step_result
+            WHERE (step_result->>'status' = 'failed' OR step_result->>'success' = 'false')
+              AND s.created_at > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours')
+        )
+        SELECT '   ' || COALESCE(step_name, 'N/A') || ' (' || app_id || ') - ' || 
+               to_char(created_at, 'HH24:MI')
+        FROM failed_steps
+        ORDER BY created_at DESC
+        LIMIT 3;
+    " 2>/dev/null || echo "   (无)"
+    
+    echo ""
+}
+
+# 主入口
+main() {
+    check_deps
+    
+    local cmd="${1:-help}"
+    shift 2>/dev/null || true
+    
+    case "$cmd" in
+        run)
+            cmd_run "$@"
+            ;;
+        trace)
+            cmd_trace "$@"
+            ;;
+        list|ls)
+            cmd_list "$@"
+            ;;
+        sessions|history)
+            cmd_sessions "$@"
+            ;;
+        errors)
+            cmd_errors "$@"
+            ;;
+        health)
+            cmd_health "$@"
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            echo -e "${RED}❌ 未知命令: $cmd${NC}"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
