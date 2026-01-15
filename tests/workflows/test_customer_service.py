@@ -134,9 +134,7 @@ class TestCustomerServiceWorkflow:
         assert len(workflow.steps) == 3
 
 
-@pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量"
-)
+@pytest.mark.skipif(not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量")
 class TestCustomerServiceE2E:
     """端到端测试（需要真实 API Key）"""
 

@@ -77,14 +77,10 @@ def resolve_variant(provider: str, variant: ModelVariant, fallback: str) -> str:
     model_id = mappings.get(variant.value)
 
     if model_id:
-        logger.debug(
-            "Resolved variant %s/%s -> %s", provider, variant.value, model_id
-        )
+        logger.debug("Resolved variant %s/%s -> %s", provider, variant.value, model_id)
         return model_id
 
-    logger.debug(
-        "No mapping for %s/%s, using fallback: %s", provider, variant.value, fallback
-    )
+    logger.debug("No mapping for %s/%s, using fallback: %s", provider, variant.value, fallback)
     return fallback
 
 
@@ -104,4 +100,3 @@ def validate_variant_mappings() -> list[str]:
             if model_id not in MODEL_REGISTRY:
                 warnings.append(f"{provider}/{variant_name}: {model_id} not in registry")
     return warnings
-

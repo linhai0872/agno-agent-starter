@@ -52,7 +52,6 @@ class LRUCache:
                 self._cache.popitem(last=False)
             self._cache[key] = value
 
-
     def clear(self) -> None:
         """清空缓存"""
         self._cache.clear()
@@ -132,8 +131,7 @@ class ProviderRegistry:
         # Ollama 不需要 API Key
         if config.provider != ModelProvider.OLLAMA and not api_key:
             raise ValueError(
-                f"{adapter.provider_name} API Key not found. "
-                f"Set: {adapter.default_env_var}"
+                f"{adapter.provider_name} API Key not found. Set: {adapter.default_env_var}"
             )
 
         # 生成缓存 Key
@@ -180,4 +178,3 @@ class ProviderRegistry:
 def get_registry(cache_size: int = DEFAULT_CACHE_SIZE) -> ProviderRegistry:
     """获取 ProviderRegistry 单例"""
     return ProviderRegistry(cache_size)
-

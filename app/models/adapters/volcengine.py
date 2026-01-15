@@ -72,9 +72,7 @@ class VolcengineModel:
 
         # 深度思考 (豆包 Seed 系列)
         if self.config.reasoning.enabled:
-            params["thinking"] = {
-                "type": self.config.reasoning.volcengine_thinking_type
-            }
+            params["thinking"] = {"type": self.config.reasoning.volcengine_thinking_type}
 
         # 结构化输出
         if self.config.structured_output.enabled:
@@ -117,9 +115,7 @@ class VolcengineModel:
         }
 
         if self.config.web_search.volcengine_max_keyword != 3:
-            tool["web_search"]["max_keyword"] = (
-                self.config.web_search.volcengine_max_keyword
-            )
+            tool["web_search"]["max_keyword"] = self.config.web_search.volcengine_max_keyword
         if self.config.web_search.volcengine_limit != 10:
             tool["web_search"]["limit"] = self.config.web_search.volcengine_limit
         if self.config.web_search.volcengine_sources:
@@ -164,10 +160,7 @@ class VolcengineModel:
             "raw": response,
         }
 
-        if (
-            hasattr(choice.message, "reasoning_content")
-            and choice.message.reasoning_content
-        ):
+        if hasattr(choice.message, "reasoning_content") and choice.message.reasoning_content:
             result["reasoning"] = choice.message.reasoning_content
 
         if hasattr(choice.message, "tool_calls") and choice.message.tool_calls:
@@ -209,9 +202,7 @@ class VolcengineAdapter(BaseModelAdapter):
         api_key = self.get_api_key(config, project_config)
 
         if not api_key:
-            raise ValueError(
-                f"Volcengine Ark API Key not found. Set: {self.default_env_var}"
-            )
+            raise ValueError(f"Volcengine Ark API Key not found. Set: {self.default_env_var}")
 
         logger.info("Creating Volcengine model: %s", config.model_id)
 

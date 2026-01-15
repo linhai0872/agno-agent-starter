@@ -29,9 +29,7 @@ class TestResearchReportSchema:
                     "confidence": "high",
                 }
             ],
-            "sources": [
-                {"title": "Agno Docs", "url": "https://docs.agno.com", "type": "web"}
-            ],
+            "sources": [{"title": "Agno Docs", "url": "https://docs.agno.com", "type": "web"}],
             "recommendations": ["建议使用 Agno 框架"],
             "limitations": ["研究时间有限"],
         }
@@ -122,9 +120,7 @@ class TestDeepResearchTeam:
         assert len(researcher.tool_hooks) > 0
 
 
-@pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量"
-)
+@pytest.mark.skipif(not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量")
 class TestDeepResearchE2E:
     """端到端测试（需要真实 API Key）"""
 

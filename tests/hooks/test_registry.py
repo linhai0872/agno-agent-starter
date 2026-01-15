@@ -33,9 +33,7 @@ class TestHooksRegistryConflictDetection:
         registry = HooksRegistry()
         registry.register_framework_hooks(
             HooksConfig(
-                pre_hooks=[
-                    HookConfig(name="my_hook", hook_fn=dummy_hook_a, hook_type="pre")
-                ]
+                pre_hooks=[HookConfig(name="my_hook", hook_fn=dummy_hook_a, hook_type="pre")]
             )
         )
 
@@ -43,9 +41,7 @@ class TestHooksRegistryConflictDetection:
         with pytest.raises(RegistryConflictError) as exc_info:
             registry.register_framework_hooks(
                 HooksConfig(
-                    pre_hooks=[
-                        HookConfig(name="my_hook", hook_fn=dummy_hook_b, hook_type="pre")
-                    ]
+                    pre_hooks=[HookConfig(name="my_hook", hook_fn=dummy_hook_b, hook_type="pre")]
                 )
             )
 
@@ -57,9 +53,7 @@ class TestHooksRegistryConflictDetection:
         registry = HooksRegistry()
         registry.register_framework_hooks(
             HooksConfig(
-                post_hooks=[
-                    HookConfig(name="validator", hook_fn=dummy_hook_a, hook_type="post")
-                ]
+                post_hooks=[HookConfig(name="validator", hook_fn=dummy_hook_a, hook_type="post")]
             )
         )
 
@@ -82,9 +76,7 @@ class TestHooksRegistryConflictDetection:
         registry.register_project_hooks(
             "proj1",
             HooksConfig(
-                pre_hooks=[
-                    HookConfig(name="checker", hook_fn=dummy_hook_a, hook_type="pre")
-                ]
+                pre_hooks=[HookConfig(name="checker", hook_fn=dummy_hook_a, hook_type="pre")]
             ),
         )
 
@@ -93,9 +85,7 @@ class TestHooksRegistryConflictDetection:
             registry.register_project_hooks(
                 "proj1",
                 HooksConfig(
-                    pre_hooks=[
-                        HookConfig(name="checker", hook_fn=dummy_hook_b, hook_type="pre")
-                    ]
+                    pre_hooks=[HookConfig(name="checker", hook_fn=dummy_hook_b, hook_type="pre")]
                 ),
             )
 
@@ -110,17 +100,13 @@ class TestHooksRegistryConflictDetection:
         registry.register_project_hooks(
             "proj1",
             HooksConfig(
-                pre_hooks=[
-                    HookConfig(name="shared", hook_fn=dummy_hook_a, hook_type="pre")
-                ]
+                pre_hooks=[HookConfig(name="shared", hook_fn=dummy_hook_a, hook_type="pre")]
             ),
         )
         registry.register_project_hooks(
             "proj2",
             HooksConfig(
-                pre_hooks=[
-                    HookConfig(name="shared", hook_fn=dummy_hook_b, hook_type="pre")
-                ]
+                pre_hooks=[HookConfig(name="shared", hook_fn=dummy_hook_b, hook_type="pre")]
             ),
         )
 
@@ -173,9 +159,7 @@ class TestHooksRegistryHelperMethods:
         registry = HooksRegistry()
         registry.register_framework_hooks(
             HooksConfig(
-                post_hooks=[
-                    HookConfig(name="info_test", hook_fn=dummy_hook_a, hook_type="post")
-                ]
+                post_hooks=[HookConfig(name="info_test", hook_fn=dummy_hook_a, hook_type="post")]
             )
         )
 

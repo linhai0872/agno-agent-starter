@@ -103,9 +103,7 @@ async def agno_list(
     """
     result = ListResult()
 
-    types_to_fetch = (
-        [app_type] if app_type else [AppType.AGENT, AppType.TEAM, AppType.WORKFLOW]
-    )
+    types_to_fetch = [app_type] if app_type else [AppType.AGENT, AppType.TEAM, AppType.WORKFLOW]
 
     for t in types_to_fetch:
         endpoint = f"/{t.value}s"

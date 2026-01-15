@@ -56,9 +56,7 @@ class BaseModelAdapter(ABC):
         if project_config and project_config.api_key_env:
             api_key = os.environ.get(project_config.api_key_env)
             if api_key:
-                logger.debug(
-                    "Using Project-level API Key from %s", project_config.api_key_env
-                )
+                logger.debug("Using Project-level API Key from %s", project_config.api_key_env)
                 return api_key
 
         # 3. Global 级

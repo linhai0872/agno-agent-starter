@@ -9,7 +9,6 @@ Agent 集成测试
 2. 环境变量已配置: OPENROUTER_API_KEY
 """
 
-
 import pytest
 
 # 经典模板测试已迁移到 tests/agents/, tests/teams/, tests/workflows/

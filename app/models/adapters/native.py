@@ -62,9 +62,7 @@ class NativeAdapter(BaseModelAdapter):
         try:
             from agno.models.openai import OpenAIChat
         except ImportError as e:
-            raise ImportError(
-                "agno package not found. Install with: pip install agno"
-            ) from e
+            raise ImportError("agno package not found. Install with: pip install agno") from e
 
         if not api_key:
             raise ValueError(f"OpenAI API Key not found. Set: {self.default_env_var}")
@@ -79,9 +77,7 @@ class NativeAdapter(BaseModelAdapter):
 
         # Structured Output
         if config.structured_output.enabled:
-            structured_params = config.structured_output.to_provider_params(
-                ModelProvider.OPENAI
-            )
+            structured_params = config.structured_output.to_provider_params(ModelProvider.OPENAI)
             params.update(structured_params)
 
         logger.info("Creating OpenAI model: %s", config.model_id)
@@ -145,9 +141,7 @@ class NativeAdapter(BaseModelAdapter):
             ) from e
 
         if not api_key:
-            raise ValueError(
-                f"Anthropic API Key not found. Set: {self.default_env_var}"
-            )
+            raise ValueError(f"Anthropic API Key not found. Set: {self.default_env_var}")
 
         params: dict[str, Any] = {"id": config.model_id}
 
@@ -174,16 +168,12 @@ class NativeAdapter(BaseModelAdapter):
         logger.info("Creating Anthropic Claude model: %s", config.model_id)
         return Claude(api_key=api_key, **params)
 
-    def _create_ollama(
-        self, config: ModelConfig, project_config: ProjectConfig | None
-    ) -> "Model":
+    def _create_ollama(self, config: ModelConfig, project_config: ProjectConfig | None) -> "Model":
         """创建 Ollama 模型"""
         try:
             from agno.models.ollama import Ollama
         except ImportError as e:
-            raise ImportError(
-                "ollama package not found. Install with: pip install ollama"
-            ) from e
+            raise ImportError("ollama package not found. Install with: pip install ollama") from e
 
         host = self._get_ollama_host(config)
         params: dict[str, Any] = {"id": config.model_id, "host": host}

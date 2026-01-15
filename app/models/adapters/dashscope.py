@@ -77,9 +77,7 @@ class DashScopeModel:
             params["enable_search"] = True
             search_options: dict[str, Any] = {}
             if self.config.web_search.dashscope_search_strategy != "standard":
-                search_options["search_strategy"] = (
-                    self.config.web_search.dashscope_search_strategy
-                )
+                search_options["search_strategy"] = self.config.web_search.dashscope_search_strategy
             if self.config.web_search.dashscope_forced_search:
                 search_options["forced_search"] = True
             if search_options:
@@ -171,15 +169,11 @@ class DashScopeModel:
     def _handle_multimodal_response(self, response: Any) -> dict[str, Any]:
         """处理多模态非流式响应"""
         if response.status_code != 200:
-            raise RuntimeError(
-                f"DashScope API error: {response.code} - {response.message}"
-            )
+            raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
 
         content = response.output.choices[0].message.content
         if isinstance(content, list):
-            text = "".join(
-                [c.get("text", "") for c in content if isinstance(c, dict)]
-            )
+            text = "".join([c.get("text", "") for c in content if isinstance(c, dict)])
         else:
             text = content
 
@@ -193,21 +187,15 @@ class DashScopeModel:
             "raw": response,
         }
 
-    def _handle_multimodal_stream(
-        self, responses: Any
-    ) -> Iterator[dict[str, Any]]:
+    def _handle_multimodal_stream(self, responses: Any) -> Iterator[dict[str, Any]]:
         """处理多模态流式响应"""
         for response in responses:
             if response.status_code != 200:
-                raise RuntimeError(
-                    f"DashScope API error: {response.code} - {response.message}"
-                )
+                raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
 
             content = response.output.choices[0].message.content
             if isinstance(content, list):
-                text = "".join(
-                    [c.get("text", "") for c in content if isinstance(c, dict)]
-                )
+                text = "".join([c.get("text", "") for c in content if isinstance(c, dict)])
             else:
                 text = content or ""
 
@@ -219,9 +207,7 @@ class DashScopeModel:
     def _handle_response(self, response: Any) -> dict[str, Any]:
         """处理非流式响应"""
         if response.status_code != 200:
-            raise RuntimeError(
-                f"DashScope API error: {response.code} - {response.message}"
-            )
+            raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
 
         return {
             "content": response.output.text
@@ -239,9 +225,7 @@ class DashScopeModel:
         """处理流式响应"""
         for response in responses:
             if response.status_code != 200:
-                raise RuntimeError(
-                    f"DashScope API error: {response.code} - {response.message}"
-                )
+                raise RuntimeError(f"DashScope API error: {response.code} - {response.message}")
 
             content = ""
             if hasattr(response.output, "text"):
@@ -263,9 +247,7 @@ class DashScopeModel:
         try:
             from openai import OpenAI
         except ImportError as e:
-            raise ImportError(
-                "openai package not found. Install with: pip install openai"
-            ) from e
+            raise ImportError("openai package not found. Install with: pip install openai") from e
 
         return OpenAI(
             api_key=self.api_key,
@@ -335,9 +317,7 @@ class DashScopeAdapter(BaseModelAdapter):
         api_key = self.get_api_key(config, project_config)
 
         if not api_key:
-            raise ValueError(
-                f"DashScope API Key not found. Set: {self.default_env_var}"
-            )
+            raise ValueError(f"DashScope API Key not found. Set: {self.default_env_var}")
 
         logger.info("Creating DashScope model: %s", config.model_id)
 

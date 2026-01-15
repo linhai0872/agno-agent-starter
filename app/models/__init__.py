@@ -83,4 +83,3 @@ __all__ = [
     "ProviderRegistry",
     "get_registry",
 ]
-

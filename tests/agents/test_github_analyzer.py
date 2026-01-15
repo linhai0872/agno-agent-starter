@@ -75,9 +75,7 @@ class TestGitHubAnalyzerAgent:
         assert agent.output_schema == GitHubRepoAnalysis
 
 
-@pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量"
-)
+@pytest.mark.skipif(not os.getenv("OPENROUTER_API_KEY"), reason="需要 OPENROUTER_API_KEY 环境变量")
 class TestGitHubAnalyzerE2E:
     """端到端测试（需要真实 API Key）"""
 

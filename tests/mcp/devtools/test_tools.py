@@ -177,8 +177,16 @@ class TestAgnoTrace:
         mock_conn = AsyncMock()
         mock_cursor = AsyncMock()
         mock_cursor.fetchone = AsyncMock(return_value=(runs_data,))
-        mock_conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()))
-        mock_pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()))
+        mock_conn.cursor = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()
+            )
+        )
+        mock_pool.connection = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()
+            )
+        )
 
         # Act
         result = await agno_trace(mock_pool, "sess-123", DetailLevel.SUMMARY)
@@ -195,8 +203,16 @@ class TestAgnoTrace:
         mock_conn = AsyncMock()
         mock_cursor = AsyncMock()
         mock_cursor.fetchone = AsyncMock(return_value=None)
-        mock_conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()))
-        mock_pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()))
+        mock_conn.cursor = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()
+            )
+        )
+        mock_pool.connection = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()
+            )
+        )
 
         # Act
         result = await agno_trace(mock_pool, "invalid-sess")
@@ -214,8 +230,16 @@ class TestAgnoTrace:
         mock_conn = AsyncMock()
         mock_cursor = AsyncMock()
         mock_cursor.fetchone = AsyncMock(return_value=(runs_data,))
-        mock_conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()))
-        mock_pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()))
+        mock_conn.cursor = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()
+            )
+        )
+        mock_pool.connection = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()
+            )
+        )
 
         # Act
         result = await agno_trace(mock_pool, "sess-456")
@@ -239,8 +263,16 @@ class TestAgnoSessions:
         mock_conn = AsyncMock()
         mock_cursor = AsyncMock()
         mock_cursor.fetchall = AsyncMock(return_value=rows)
-        mock_conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()))
-        mock_pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()))
+        mock_conn.cursor = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()
+            )
+        )
+        mock_pool.connection = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()
+            )
+        )
 
         # Act
         result = await agno_sessions(mock_pool)
@@ -260,8 +292,16 @@ class TestAgnoSessions:
         mock_cursor = AsyncMock()
         mock_cursor.fetchall = AsyncMock(return_value=rows)
         mock_cursor.execute = AsyncMock()
-        mock_conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()))
-        mock_pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()))
+        mock_conn.cursor = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_cursor), __aexit__=AsyncMock()
+            )
+        )
+        mock_pool.connection = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_conn), __aexit__=AsyncMock()
+            )
+        )
 
         # Act
         result = await agno_sessions(mock_pool, AppType.WORKFLOW)

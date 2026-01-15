@@ -29,15 +29,11 @@ class ConcreteRegistry(PriorityRegistry[DummyItem]):
         self._check_conflict(self._framework_items, name, RegistryLevel.FRAMEWORK)
         self._framework_items[name] = item
 
-    def register_project_item(
-        self, project_id: str, name: str, item: DummyItem
-    ) -> None:
+    def register_project_item(self, project_id: str, name: str, item: DummyItem) -> None:
         if project_id not in self._project_items:
             self._project_items[project_id] = {}
 
-        self._check_conflict(
-            self._project_items[project_id], name, RegistryLevel.PROJECT
-        )
+        self._check_conflict(self._project_items[project_id], name, RegistryLevel.PROJECT)
         self._project_items[project_id][name] = item
 
 

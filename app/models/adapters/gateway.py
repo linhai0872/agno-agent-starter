@@ -50,36 +50,26 @@ class GatewayAdapter(BaseModelAdapter):
         else:
             raise ValueError(f"Unsupported gateway type: {self.gateway_type}")
 
-    def _create_openrouter(
-        self, config: ModelConfig, api_key: str | None
-    ) -> "Model":
+    def _create_openrouter(self, config: ModelConfig, api_key: str | None) -> "Model":
         """创建 OpenRouter 模型"""
         try:
             from agno.models.openrouter import OpenRouter
         except ImportError as e:
-            raise ImportError(
-                "agno package not found. Install with: pip install agno"
-            ) from e
+            raise ImportError("agno package not found. Install with: pip install agno") from e
 
         if not api_key:
-            raise ValueError(
-                f"OpenRouter API Key not found. Set: {self.default_env_var}"
-            )
+            raise ValueError(f"OpenRouter API Key not found. Set: {self.default_env_var}")
 
         params = config.to_agno_params()
         logger.info("Creating OpenRouter model: %s", params.get("id"))
         return OpenRouter(api_key=api_key, **params)
 
-    def _create_litellm(
-        self, config: ModelConfig, api_key: str | None
-    ) -> "Model":
+    def _create_litellm(self, config: ModelConfig, api_key: str | None) -> "Model":
         """创建 LiteLLM 模型"""
         try:
             from agno.models.litellm import LiteLLM
         except ImportError as e:
-            raise ImportError(
-                "litellm package not found. Install with: pip install litellm"
-            ) from e
+            raise ImportError("litellm package not found. Install with: pip install litellm") from e
 
         params = {"id": config.model_id}
         if api_key:
