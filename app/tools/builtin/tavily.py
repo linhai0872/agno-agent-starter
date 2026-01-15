@@ -2,22 +2,8 @@
 Tavily 搜索和内容抽取工具
 
 Agno 原生支持的 Tavily 工具集，提供：
-1. tavily_search - 网络搜索
-2. tavily_extract - 网页内容抽取（需要 TavilyTools extract 模式）
-
-使用示例:
-
-```python
-from app.tools.builtin.tavily import create_tavily_tools, TAVILY_SEARCH_TOOLS
-
-# 获取搜索工具
-tools = create_tavily_tools()
-
-# 在 Agent 中使用
-agent = Agent(
-    tools=tools,
-)
-```
+1. web_search_using_tavily - 网络搜索
+2. extract_url_content - 网页内容抽取
 
 环境变量:
     TAVILY_API_KEY: Tavily API 密钥（必需）
