@@ -30,7 +30,7 @@ def _derive_db_url() -> str:
 
 class DevToolsConfig(BaseSettings):
     """DevTools MCP Server configuration.
-    
+
     自动从项目环境变量派生配置，真正零配置开箱即用。
     """
 
