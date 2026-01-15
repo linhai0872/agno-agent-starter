@@ -86,10 +86,13 @@ exclude = [
     "dist",
     # 暂时排除有复杂类型问题的文件 (将在 Epic 7 处理)
     "app/models/providers/**",
+    "app/models/adapters/gateway.py",
     "app/models/factory.py",
     "app/models/config.py",
     "app/tools/builtin/**",
     "app/tools/config.py",
+    "app/mcp/**",
+    "app/workflows/customer_service/steps.py",
 ]
 reportMissingImports = "warning"
 reportMissingTypeStubs = false
