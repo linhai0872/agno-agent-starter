@@ -73,3 +73,10 @@ ddgs>=7.0.0
 opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 openinference-instrumentation-agno>=0.1.0
+
+# ===========================================
+# MCP DevTools (可选)
+# ===========================================
+
+# FastMCP (MCP Server 框架) - 固定版本以避免 breaking changes
+fastmcp==2.14.2

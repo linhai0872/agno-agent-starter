@@ -27,10 +27,11 @@ agno-agent-starter/
 │   │   ├── framework/       # 框架级工具（脚手架提供）
 │   │   ├── project/         # ✏️ 项目级工具（用户扩展区）
 │   │   └── user/            # Agent 专用工具
-│   └── hooks/               # 护栏与生命周期钩子
+│   ├── hooks/               # 护栏与生命周期钩子
+│   └── mcp/                 # MCP Server（AI Agent 开发工具）
 ├── api/                     # OpenAPI 规格（自动生成）
 ├── tests/                   # 单元测试（镜像 app/ 结构）
-├── scripts/                 # 脚本工具
+├── scripts/                 # 脚本工具（含 agno CLI）
 └── .cursor/rules/           # Vibe Coding 规则
 ```
 
@@ -270,4 +271,6 @@ registry.register_framework_tool(tool_b, name="search")
 - [Teams 开发指南](app/teams/README.md)
 - [Workflows 开发指南](app/workflows/README.md)
 - [Models 配置指南](app/models/README.md)
+- [Agno CLI](scripts/AGNO_CLI.md) - 终端测试与调试工具
+- [MCP DevTools](app/mcp/devtools/README.md) - AI Agent 测试工具
 - [API 规格](api/README_CN.md)

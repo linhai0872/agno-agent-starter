@@ -14,7 +14,7 @@
 
 *分钟级构建、部署、扩展智能体，而非数周。*
 
-[📖 文档](https://docs.agno.com) · [🍳 Cookbook](https://docs.agno.com/cookbook) · [💬 Discord](https://discord.gg/agno) · [🐛 Issues](https://github.com/linhai0872/agno-agent-starter/issues)
+[📖 文档](https://docs.agno.com/agent-os/introduction) · [🍳 Cookbook](https://docs.agno.com/examples/use-cases/overview) · [🐛 Issues](https://github.com/linhai0872/agno-agent-starter/issues)
 
 </div>
 
@@ -120,6 +120,23 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ---
 
+## 开发者工具
+
+| 工具                                           | 面向     | 说明                                           |
+| ---------------------------------------------- | -------- | ---------------------------------------------- |
+| **[Agno CLI](scripts/AGNO_CLI.md)**            | 开发者   | 终端工具，运行和调试 Agent/Team/Workflow       |
+| **[MCP DevTools](app/mcp/devtools/README.md)** | AI Agent | MCP 工具，让 AI 测试和调试 Agno 应用（零配置） |
+
+```bash
+# CLI: 运行工作流并自动追踪
+./scripts/agno run workflow customer-service '{"query":"help"}'
+
+# CLI: 系统健康检查
+./scripts/agno health
+```
+
+---
+
 ## 项目结构
 
 ```
@@ -133,8 +150,10 @@ agno-agent-starter/
 │   ├── models/              # 模型抽象层 (8 厂商)
 │   ├── tools/               # 三层工具注册表
 │   ├── hooks/               # 护栏与生命周期钩子
+│   ├── mcp/                 # MCP Server（AI Agent 工具）
 │   └── core/                # 注册表抽象层
 ├── api/                     # OpenAPI 规格 (自动生成)
+├── scripts/                 # 脚本工具（含 agno CLI）
 ├── tests/                   # 单元测试
 └── .cursor/rules/           # Vibe Coding 规则
 ```

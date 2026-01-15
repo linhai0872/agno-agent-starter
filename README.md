@@ -14,7 +14,7 @@
 
 *Build, deploy, and scale intelligent agents in minutes, not weeks.*
 
-[📖 Docs](https://docs.agno.com) · [🍳 Cookbook](https://docs.agno.com/cookbook) · [💬 Discord](https://discord.gg/agno) · [🐛 Issues](https://github.com/linhai0872/agno-agent-starter/issues)
+[📖 Docs](https://docs.agno.com/agent-os/introduction) · [🍳 Cookbook](https://docs.agno.com/examples/use-cases/overview) · [ Issues](https://github.com/linhai0872/agno-agent-starter/issues)
 
 </div>
 
@@ -120,6 +120,23 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ---
 
+## Developer Tools
+
+| Tool                                           | For        | Description                                                 |
+| ---------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| **[Agno CLI](scripts/AGNO_CLI.md)**            | Developers | Terminal tool for running and debugging Agent/Team/Workflow |
+| **[MCP DevTools](app/mcp/devtools/README.md)** | AI Agents  | MCP tools for AI to test and debug Agno apps (zero-config)  |
+
+```bash
+# CLI: Run a workflow and auto-trace
+./scripts/agno run workflow customer-service '{"query":"help"}'
+
+# CLI: System health check
+./scripts/agno health
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -133,8 +150,10 @@ agno-agent-starter/
 │   ├── models/              # Model abstraction (8 providers)
 │   ├── tools/               # 3-tier tool registry
 │   ├── hooks/               # Guardrails & lifecycle hooks
+│   ├── mcp/                 # MCP Server (AI Agent tools)
 │   └── core/                # Registry abstractions
 ├── api/                     # OpenAPI spec (auto-generated)
+├── scripts/                 # CLI tools (agno)
 ├── tests/                   # Unit tests
 └── .cursor/rules/           # Vibe Coding rules
 ```
