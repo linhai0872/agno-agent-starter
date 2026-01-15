@@ -52,9 +52,7 @@ def wait_for_db(db_url: str, max_retries: int = 5, retry_interval: int = 2) -> b
             logger.info("数据库连接成功 (尝试 %d/%d)", attempt, max_retries)
             return True
         except Exception as e:
-            logger.warning(
-                "数据库连接失败 (尝试 %d/%d): %s", attempt, max_retries, e
-            )
+            logger.warning("数据库连接失败 (尝试 %d/%d): %s", attempt, max_retries, e)
             if attempt < max_retries:
                 time.sleep(retry_interval)
 
